@@ -19,6 +19,3 @@ public:
 	void StepInstruction(Gameboy&machine);
 };
 
-
-	//{"NOOP" , 0 , [](Gameboy&mc, unsigned short op) {} }, //0x00
-	//{"NOOP" , 0 , [](Gameboy&mc, unsigned short op) {} }, //0x01
