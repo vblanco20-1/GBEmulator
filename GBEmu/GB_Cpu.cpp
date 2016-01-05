@@ -40,19 +40,21 @@ void GB_Cpu::buildInstructionsVector()
 	//fill instruction array with NOOPs unimplemented
 	instructions = std::vector<instruction>(256, { "UNIMPLEMENTED" , 0 ,0 , [](Gameboy&mc, unsigned short op) {} } );
 
-	instructions[0x00] = { "NOOP"       ,0 ,4  ,INSTLAMBDA{} };
-	instructions[0x01] = { "LD BC, n16" ,2 ,12 ,INSTLAMBDA{mc.Registers.bc = op; } };
-	instructions[0x02] = { "LD (BC), A" ,0 ,8  ,INSTLAMBDA{mc.writeByte(mc.Registers.a,mc.Registers.bc); }};
+	instructions[0x00] = { "NOOP"       ,1 ,4  ,INSTLAMBDA{} };
+	instructions[0x01] = { "LD BC, n16" ,3 ,12 ,INSTLAMBDA{mc.Registers.bc = op; } };
+	instructions[0x02] = { "LD (BC), A" ,1 ,8  ,INSTLAMBDA{mc.writeByte(mc.Registers.a,mc.Registers.bc); }};
 	
 	
 
 	//8 bit loads LD R n8
-	instructions[0x06] = { "LD B, n8  " ,1 ,8  ,INSTLAMBDA{ mc.Registers.b = byte(op); } };
-	instructions[0x0E] = { "LD C, n8  " ,1 ,8  ,INSTLAMBDA{ mc.Registers.c = byte(op); } };
-	instructions[0x16] = { "LD D, n8  " ,1 ,8  ,INSTLAMBDA{ mc.Registers.d = byte(op); } };
-	instructions[0x1E] = { "LD E, n8  " ,1 ,8  ,INSTLAMBDA{ mc.Registers.e = byte(op); } };
-	instructions[0x26] = { "LD H, n8  " ,1 ,8  ,INSTLAMBDA{ mc.Registers.h = byte(op); } };
-	instructions[0x2E] = { "LD L, n8  " ,1 ,8  ,INSTLAMBDA{ mc.Registers.l = byte(op); } };
+	instructions[0x06] = { "LD B, n8  " ,2 ,8  ,INSTLAMBDA{ mc.Registers.b = byte(op); } };
+	instructions[0x0E] = { "LD C, n8  " ,2 ,8  ,INSTLAMBDA{ mc.Registers.c = byte(op); } };
+	instructions[0x16] = { "LD D, n8  " ,2 ,8  ,INSTLAMBDA{ mc.Registers.d = byte(op); } };
+	instructions[0x1E] = { "LD E, n8  " ,2 ,8  ,INSTLAMBDA{ mc.Registers.e = byte(op); } };
+	instructions[0x26] = { "LD H, n8  " ,2 ,8  ,INSTLAMBDA{ mc.Registers.h = byte(op); } };
+	instructions[0x2E] = { "LD L, n8  " ,2 ,8  ,INSTLAMBDA{ mc.Registers.l = byte(op); } };
+	instructions[0x36] = { "LD (HL), n8  " ,2 ,12  ,INSTLAMBDA{ mc.writeByte(byte(op), mc.Registers.hl); } };
+
 
 	//8 bit loads LD R1 R2
 	//LD A,r
@@ -63,7 +65,7 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0x7B] = { "LD A, E  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.a = mc.Registers.e; } };
 	instructions[0x7C] = { "LD A, H  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.a = mc.Registers.h; } };
 	instructions[0x7D] = { "LD A, L  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.a = mc.Registers.l; } };
-	instructions[0x7E] = { "LD A, (HL)",1 ,8  ,INSTLAMBDA{ /*mc.Registers.a = mc.Registers.a; */} };
+	instructions[0x7E] = { "LD A, (HL)",1 ,8  ,INSTLAMBDA{ mc.Registers.a = mc.readByte(mc.Registers.hl);} };
 	//LD B,r
 	instructions[0x40] = { "LD B, B  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.b = mc.Registers.b; } };
 	instructions[0x41] = { "LD B, C  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.b = mc.Registers.c; } };
@@ -71,7 +73,7 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0x43] = { "LD B, E  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.b = mc.Registers.e; } };
 	instructions[0x44] = { "LD B, H  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.b = mc.Registers.h; } };
 	instructions[0x45] = { "LD B, L  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.b = mc.Registers.l; } };
-	instructions[0x46] = { "LD B, (HL)",1 ,8  ,INSTLAMBDA{ /*mc.Registers.a = mc.Registers.a; */ } };
+	instructions[0x46] = { "LD B, (HL)",1 ,8  ,INSTLAMBDA{ mc.Registers.b = mc.readByte(mc.Registers.hl); } };
 	instructions[0x47] = { "LD B, A  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.b = mc.Registers.a; } };
 	//LD C,r
 	instructions[0x48] = { "LD C, B  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.c = mc.Registers.b; } };
@@ -80,7 +82,7 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0x4B] = { "LD C, E  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.c = mc.Registers.e; } };
 	instructions[0x4C] = { "LD C, H  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.c = mc.Registers.h; } };
 	instructions[0x4D] = { "LD C, L  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.c = mc.Registers.l; } };
-	instructions[0x4E] = { "LD C, (HL)",1 ,8  ,INSTLAMBDA{ /*mc.Registers.a = mc.Registers.a; */ } };
+	instructions[0x4E] = { "LD C, (HL)",1 ,8  ,INSTLAMBDA{ mc.Registers.c = mc.readByte(mc.Registers.hl);  } };
 	instructions[0x4F] = { "LD C, A  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.c = mc.Registers.a; } };
 	//LD D,r 
 	instructions[0x50] = { "LD D, B  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.d = mc.Registers.b; } };
@@ -89,7 +91,7 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0x53] = { "LD D, E  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.d = mc.Registers.e; } };
 	instructions[0x54] = { "LD D, H  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.d = mc.Registers.h; } };
 	instructions[0x55] = { "LD D, L  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.d = mc.Registers.l; } };
-	instructions[0x56] = { "LD D, (HL)",1 ,8  ,INSTLAMBDA{ /*mc.Registers.a = mc.Registers.a; */ } };
+	instructions[0x56] = { "LD D, (HL)",1 ,8  ,INSTLAMBDA{ mc.Registers.d = mc.readByte(mc.Registers.hl); } };
 	instructions[0x57] = { "LD D, A  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.d = mc.Registers.a; } };
 	//LD E,r 
 	instructions[0x58] = { "LD E, B  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.e = mc.Registers.b; } };
@@ -98,7 +100,7 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0x5B] = { "LD E, E  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.e = mc.Registers.e; } };
 	instructions[0x5C] = { "LD E, H  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.e = mc.Registers.h; } };
 	instructions[0x5D] = { "LD E, L  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.e = mc.Registers.l; } };
-	instructions[0x5E] = { "LD E, (HL)",1 ,8  ,INSTLAMBDA{ /*mc.Registers.a = mc.Registers.a; */ } };
+	instructions[0x5E] = { "LD E, (HL)",1 ,8  ,INSTLAMBDA{ mc.Registers.e = mc.readByte(mc.Registers.hl); } };
 	instructions[0x5F] = { "LD E, A  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.e = mc.Registers.a; } };
 	//LD H,r 
 	instructions[0x60] = { "LD H, B  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.h = mc.Registers.b; } };
@@ -107,7 +109,7 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0x63] = { "LD H, E  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.h = mc.Registers.e; } };
 	instructions[0x64] = { "LD H, H  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.h = mc.Registers.h; } };
 	instructions[0x65] = { "LD H, L  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.h = mc.Registers.l; } };
-	instructions[0x66] = { "LD H, (HL)",1 ,8  ,INSTLAMBDA{ /*mc.Registers.a = mc.Registers.a; */ } };
+	instructions[0x66] = { "LD H, (HL)",1 ,8  ,INSTLAMBDA{ mc.Registers.h = mc.readByte(mc.Registers.hl); } };
 	instructions[0x67] = { "LD H, A  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.h = mc.Registers.a; } };
 	//LD L,r 
 	instructions[0x68] = { "LD L, B  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.l = mc.Registers.b; } };
@@ -116,10 +118,18 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0x6B] = { "LD L, E  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.l = mc.Registers.e; } };
 	instructions[0x6C] = { "LD L, H  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.l = mc.Registers.h; } };
 	instructions[0x6D] = { "LD L, L  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.l = mc.Registers.l; } };
-	instructions[0x6E] = { "LD L, (HL)",1 ,8  ,INSTLAMBDA{ /*mc.Registers.a = mc.Registers.a; */ } };
+	instructions[0x6E] = { "LD L, (HL)",1 ,8  ,INSTLAMBDA{ mc.Registers.l = mc.readByte(mc.Registers.hl); } };
 	instructions[0x6F] = { "LD L, A  " ,1 ,4  ,INSTLAMBDA{ mc.Registers.l = mc.Registers.a; } };
 
+	//LD (HL),r
+	instructions[0x70] = { "LD (HL), B  " ,1 ,8  ,INSTLAMBDA{ mc.writeByte(mc.Registers.b, mc.Registers.hl); } };
+	instructions[0x71] = { "LD (HL), C  " ,1 ,8  ,INSTLAMBDA{ mc.writeByte(mc.Registers.c, mc.Registers.hl); } };
+	instructions[0x72] = { "LD (HL), D  " ,1 ,8  ,INSTLAMBDA{ mc.writeByte(mc.Registers.d, mc.Registers.hl); } };
+	instructions[0x73] = { "LD (HL), E  " ,1 ,8  ,INSTLAMBDA{ mc.writeByte(mc.Registers.e, mc.Registers.hl); } };
+	instructions[0x74] = { "LD (HL), H  " ,1 ,8  ,INSTLAMBDA{ mc.writeByte(mc.Registers.h, mc.Registers.hl); } };
+	instructions[0x75] = { "LD (HL), L  " ,1 ,8  ,INSTLAMBDA{ mc.writeByte(mc.Registers.l, mc.Registers.hl); } };
 
+	
 	instructions[0x07] = { "RLCA      " ,0 ,4  ,INSTLAMBDA{ rlca(mc); } };
 	instructions[0x08] = { "LD n16, SP  ",2 ,8  ,INSTLAMBDA{ mc.Registers.sp = op; } };
 	
