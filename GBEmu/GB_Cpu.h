@@ -3,7 +3,6 @@
 #include <functional>
 #include <vector>
 
-void StepInstruction(Gameboy&machine);
 
 struct instruction {
 	std::string dissasembly;

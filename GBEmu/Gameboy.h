@@ -49,6 +49,11 @@ struct GBRegisterBank {
 	unsigned short pc;
 };
 
+const unsigned char	Zero_Flag = 1 << 7;
+const unsigned char	Subtract_Flag = 1 << 6;
+const unsigned char	HalfCarry_Flag = 1 << 5;
+const unsigned char	Carry_Flag     = 1 << 4;
+
 class Gameboy
 {
 public:
@@ -57,12 +62,17 @@ public:
 
 	void writeByte(byte b, unsigned short idx);
 	byte readByte(unsigned short idx);
+	unsigned short readShort(unsigned short idx);
 	bool LoadROM(std::string Address);
-
+	void reset();
 	
 	//32k of memory
 	byte memory[65536];
 	
 	GBRegisterBank Registers;
+
+	void SetFlags(unsigned char flags);
+	void ClearFlags(unsigned char flags);
+	bool GetFlag(unsigned char flag);
 };
 

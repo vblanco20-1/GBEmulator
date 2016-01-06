@@ -23,7 +23,12 @@ byte Gameboy::readByte(unsigned short idx)
 {
 	return memory[idx];
 }
-
+unsigned short Gameboy::readShort(unsigned short idx)
+{
+	unsigned short byte1 = readByte(idx);
+	unsigned short byte2 = readByte(idx + 1);
+	return byte1 | (byte2 << 8);
+}
 bool Gameboy::LoadROM(std::string Address)
 {
 	ifstream rom;
@@ -41,9 +46,40 @@ bool Gameboy::LoadROM(std::string Address)
 		cout << "ROM successfully loaded: " << Address << endl;
 
 		delete[] memblock;
+
+		reset();
 		return true;
 	}
 
 	return false;
+}
+
+void Gameboy::reset()
+{
+	Registers.a = 0x01;
+	Registers.f = 0xb0;
+	Registers.b = 0x00;
+	Registers.c = 0x13;
+	Registers.d = 0x00;
+	Registers.e = 0xd8;
+	Registers.h = 0x01;
+	Registers.l = 0x4d;
+	Registers.sp = 0xfffe;
+	Registers.pc = 0x100;
+}
+
+void Gameboy::SetFlags(unsigned char flags)
+{
+	Registers.f = Registers.f | flags;
+}
+
+void Gameboy::ClearFlags(unsigned char flags)
+{
+	Registers.f = Registers.f & ~flags;
+}
+
+bool Gameboy::GetFlag(unsigned char flag)
+{
+	return ((Registers.f & flag) != 0) ;
 }
 
