@@ -16,6 +16,11 @@ void rlca(Gameboy&mc)
 }
 void inc(unsigned char& val) {
 	val++;
+	/*if (val == 0)
+	{
+		mc.SetFlags(Zero_Flag);
+	}*/
+
 }
 void dec(unsigned char& val) {
 	val--;
@@ -97,37 +102,43 @@ void _or(Gameboy&mc, unsigned short n)
 }
 void cp(Gameboy&mc, unsigned short n)
 {
-	/*mc.Registers.a = mc.Registers.a | n;
-	if (mc.Registers.a == 0)
+	if (mc.Registers.a == n)
 	{
 		mc.SetFlags(Zero_Flag);
-	}*/
+	}
+	mc.SetFlags(Subtract_Flag);
 }
 
-void ret(Gameboy&mc)
-{
-	mc.Registers.sp += 2;
-	mc.Registers.pc = mc.readShort(mc.Registers.sp);
-}
+
 void push(Gameboy&mc, unsigned short data)
 {
 	mc.Registers.sp -= 2;
+	mc.writeShort(mc.Registers.sp, data);	
+}
 
-	mc.writeByte(data & 0xFF00 >> 8,mc.Registers.sp + 1);
-	mc.writeByte(data &0x00FF,mc.Registers.sp);
-	
+void pop(Gameboy&mc, unsigned short&data)
+{	
+	data=mc.readShort(mc.Registers.sp);
+	mc.Registers.sp += 2;
 }
 void call(Gameboy&mc, unsigned short addr)
-{
-	
+{	
 	push(mc, addr);
 	mc.Registers.pc = addr;
 }
+void ret(Gameboy&mc)
+{
+	pop(mc, mc.Registers.sp);
+}
 
-
+void rst(Gameboy&mc, unsigned char n)
+{
+	push(mc,mc.Registers.pc);
+	mc.Registers.pc = 0x0000 + n;
+}
 
 void unimplemented(unsigned char opcode = 0) {
-	//std::cout << "UNIMPLEMENTEEED" <<std::hex << opcode << std::endl;
+	std::cout << "UNIMPLEMENTEEED" <<std::hex << opcode << std::endl;
 	
 }
 
@@ -178,7 +189,7 @@ void GB_Cpu::buildInstructionsVector()
 
 	instructions[0x08] = { "LD n16, SP ",2 ,8  ,INSTLAMBDA{ mc.Registers.sp = op; } };
 	instructions[0x09] = { "ADD HL, BC" ,1 ,8  ,INSTLAMBDA{ add16(mc,mc.Registers.hl,mc.Registers.bc); } };	
-	instructions[0x0A] = { "LD A,(BC)  ",1 ,8  ,INSTLAMBDA{unimplemented(0x0A);   } };
+	instructions[0x0A] = { "LD A,(BC)  ",1 ,8  ,INSTLAMBDA{ mc.Registers.a = mc.readByte(mc.Registers.bc);   } };
 	instructions[0x0B] = { "DEC BC    " ,1 ,8  ,INSTLAMBDA{ mc.Registers.bc--; } };
 	instructions[0x0C] = { "INC C     " ,1 ,4  ,INSTLAMBDA{ inc(mc.Registers.c); } };
 	instructions[0x0D] = { "DEC C	  " ,1 ,4  ,INSTLAMBDA{ dec(mc.Registers.c); } };
@@ -194,9 +205,9 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0x16] = { "LD D, n8  " ,2 ,8  ,INSTLAMBDA{ mc.Registers.d = byte(op); } };
 	instructions[0x17] = { "RLA       " ,1 ,4  ,INSTLAMBDA{ mc.Registers.d = byte(op); } };
 
-	instructions[0x18] = { "JR n8     " ,2 ,12  ,INSTLAMBDA{ unimplemented(); } };
+	instructions[0x18] = { "JR n8     " ,2 ,12  ,INSTLAMBDA{ mc.Registers.pc += op; } };
 	instructions[0x19] = { "ADD HL, DE" ,1 ,8  ,INSTLAMBDA{ add16(mc,mc.Registers.hl,mc.Registers.de); } };
-	instructions[0x1A] = { "LD A,(DE) " ,1 ,8  ,INSTLAMBDA{ unimplemented(); } };
+	instructions[0x1A] = { "LD A,(DE) " ,1 ,8  ,INSTLAMBDA{ mc.Registers.a = mc.readByte(mc.Registers.de); } };
 	instructions[0x1B] = { "DEC DE    " ,1 ,8  ,INSTLAMBDA{ mc.Registers.de--; } };
 	instructions[0x1C] = { "INC E     " ,1 ,4  ,INSTLAMBDA{ inc(mc.Registers.e); } };
 	instructions[0x1D] = { "DEC E     " ,1 ,4  ,INSTLAMBDA{ dec(mc.Registers.e); } };
@@ -214,7 +225,7 @@ void GB_Cpu::buildInstructionsVector()
 
 	instructions[0x28] = { "JR Z, n8"  ,2 ,12  ,INSTLAMBDA{ if (mc.GetFlag(Zero_Flag)) { mc.Registers.pc += op; } } };
 	instructions[0x29] = { "ADD HL, HL   " ,0 ,8  ,INSTLAMBDA{ add16(mc,mc.Registers.hl,mc.Registers.hl); } };
-	instructions[0x2A] = { "LD A,(HL+)" ,1 ,8  ,INSTLAMBDA{ unimplemented(); } };
+	instructions[0x2A] = { "LD A,(HL+)" ,1 ,8  ,INSTLAMBDA{ mc.Registers.a = mc.readByte(mc.Registers.hl); mc.Registers.hl++; } };
 	instructions[0x2B] = { "DEC HL    " ,0 ,8  ,INSTLAMBDA{ mc.Registers.hl--; } };
 	instructions[0x2C] = { "INC L     " ,0 ,4  ,INSTLAMBDA{ inc(mc.Registers.l); } };
 	instructions[0x2D] = { "DEC L     " ,0 ,4  ,INSTLAMBDA{ dec(mc.Registers.l); } };
@@ -223,7 +234,7 @@ void GB_Cpu::buildInstructionsVector()
 
 	instructions[0x30] = { "JR NC, n8"  ,2 ,12  ,INSTLAMBDA{ if (!mc.GetFlag(Carry_Flag)) { mc.Registers.pc += op; } } };
 	instructions[0x31] = { "LD SP, n16" ,3 ,12  ,INSTLAMBDA{ mc.Registers.sp = op; } };
-	instructions[0x32] = { "LD (HL-), A",1 ,8  ,INSTLAMBDA{ mc.writeByte(mc.Registers.hl,mc.Registers.bc); } };
+	instructions[0x32] = { "LD (HL-), A",1 ,8  ,INSTLAMBDA{ mc.writeByte(mc.Registers.a,mc.Registers.hl); mc.Registers.hl--; } };
 	instructions[0x33] = { "INC SP    " ,1 ,8  ,INSTLAMBDA{ mc.Registers.sp++; } };
 	instructions[0x34] = { "INC (HL)"   ,1 ,12  ,INSTLAMBDA{ unimplemented(); } };
 	instructions[0x35] = { "INC (HL)"   ,1 ,12  ,INSTLAMBDA{ unimplemented(); } };
@@ -232,7 +243,7 @@ void GB_Cpu::buildInstructionsVector()
 
 	instructions[0x38] = { "JR C, n8"  ,2 ,12  ,INSTLAMBDA{ if (mc.GetFlag(Carry_Flag)) { mc.Registers.pc += op; } } };
 	instructions[0x39] = { "ADD HL, SP   " ,1 ,8  ,INSTLAMBDA{ add16(mc,mc.Registers.hl,mc.Registers.sp); } };
-	instructions[0x3A] = { "LD A,(HL-)" ,1 ,8  ,INSTLAMBDA{ unimplemented(); } };
+	instructions[0x3A] = { "LD A,(HL-)" ,1 ,8  ,INSTLAMBDA{ mc.Registers.a = mc.readByte(mc.Registers.hl); mc.Registers.hl--; } };
 	instructions[0x3B] = { "DEC SP    " ,1 ,8  ,INSTLAMBDA{ mc.Registers.sp--; } };
 	instructions[0x3C] = { "INC A	  " ,1 ,4  ,INSTLAMBDA{ inc(mc.Registers.a); } };
 	instructions[0x3D] = { "DEC A	  " ,1 ,4  ,INSTLAMBDA{ dec(mc.Registers.a); } };
@@ -384,75 +395,74 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0xBF] = { "CP A" ,1 ,4  ,INSTLAMBDA{ cp(mc,mc.Registers.a); } };
 	
 	instructions[0xC0] = { "RET NZ   " ,1 ,20  ,INSTLAMBDA{ if (!mc.GetFlag(Zero_Flag)) { ret(mc); }  } };
-	instructions[0xC1] = { "POP BC   " ,1 ,20  ,INSTLAMBDA{unimplemented(); } };
+	instructions[0xC1] = { "POP BC   " ,1 ,20  ,INSTLAMBDA{ pop(mc,mc.Registers.bc); } };
 	instructions[0xC2] = { "JP NZ, a16 " ,3 ,16  ,INSTLAMBDA{ unimplemented(0xC2); } };
 	instructions[0xC3] = { "JP a16 " ,3 ,16  ,INSTLAMBDA{ mc.Registers.pc = op; } };
 	instructions[0xC4] = { "CALL NZ ,n16   " ,3 ,24  ,INSTLAMBDA{ if (!mc.GetFlag(Zero_Flag)) { call(mc,op); } } };
-	instructions[0xC5] = { "PUSH BC ", 1, 16, INSTLAMBDA{ unimplemented(); } };
+	instructions[0xC5] = { "PUSH BC ", 1, 16, INSTLAMBDA{ push(mc,mc.Registers.bc); } };
 	instructions[0xC6] = { "ADD N8",2 ,8,INSTLAMBDA{ add(mc,op); } };
-	instructions[0xC7] = { "RST 00H ", 1 ,16  ,INSTLAMBDA{ /* Reset*/ } };
+	instructions[0xC7] = { "RST 00H ", 1 ,16  ,INSTLAMBDA{ rst(mc,0x00); } };
 
 	instructions[0xC8] = { "RET Z   " ,1 ,20  ,INSTLAMBDA{ if (mc.GetFlag(Zero_Flag)) { ret(mc); } } };
 	instructions[0xC9] = { "RET     " ,1 ,16  ,INSTLAMBDA{  ret(mc);  } };
 	instructions[0xCA] = { "JP Z, a16 " ,3 ,16  ,INSTLAMBDA{ unimplemented(); } };
-	instructions[0xCB] = { "PREFIX CB " ,1 ,4  ,INSTLAMBDA{ unimplemented(); } };
+	instructions[0xCB] = { "PREFIX CB " ,1 ,4  ,INSTLAMBDA{ /*unimplemented();*/ } };
 	instructions[0xCC] = { "CALL Z ,n16   " ,3 ,24  ,INSTLAMBDA{ if (mc.GetFlag(Zero_Flag)) { call(mc,op); } } };
 	instructions[0xCD] = { "CALL n16   " ,3 ,12  ,INSTLAMBDA{ call(mc,op); } };
-	instructions[0xCE] = { "ADC A, n8" ,2 ,8  ,INSTLAMBDA{ unimplemented(); } };
-	instructions[0xCF] = { "RST 08H ", 1 ,16  ,INSTLAMBDA{ /* Reset*/ } };
+	instructions[0xCE] = { "ADC A, n8" ,2 ,8  ,INSTLAMBDA{ adc(mc,op); } };
+	instructions[0xCF] = { "RST 08H ", 1 ,16  ,INSTLAMBDA{ rst(mc,0x08); } };
 
 	instructions[0xD0] = { "RET NC   " ,1 ,20  ,INSTLAMBDA{ if (!mc.GetFlag(Carry_Flag)) { ret(mc); } } };
-	instructions[0xD1] = { "POP DE   " ,1 ,20  ,INSTLAMBDA{ unimplemented(); } };
+	instructions[0xD1] = { "POP DE   " ,1 ,20  ,INSTLAMBDA{ pop(mc,mc.Registers.de); } };
 	instructions[0xD2] = { "JP NC, a16 " ,3 ,16  ,INSTLAMBDA{ unimplemented(); } };
 	instructions[0xD3] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{ } };
 	instructions[0xD4] = { "CALL NC ,n16   " ,3 ,24  ,INSTLAMBDA{ if (!mc.GetFlag(Carry_Flag)) { call(mc,op); } } };
-	instructions[0xD5] = { "PUSH DE ", 1, 16, INSTLAMBDA{ unimplemented(); } };
+	instructions[0xD5] = { "PUSH DE ", 1, 16, INSTLAMBDA{ push(mc,mc.Registers.de); } };
 	instructions[0xD6] = { "SUB N8",2 ,8,INSTLAMBDA{ sub(mc,op); } };
-	instructions[0xD7] = { "RST 10H ", 1 ,16  ,INSTLAMBDA{ /* Reset*/ } };
+	instructions[0xD7] = { "RST 10H ", 1 ,16  ,INSTLAMBDA{ rst(mc,0x10); } };
 
 	instructions[0xD8] = { "RET C   " ,1 ,20  ,INSTLAMBDA{ if (mc.GetFlag(Carry_Flag)) { ret(mc); } } };
-	instructions[0xD9] = { "RETI    " ,1 ,16  ,INSTLAMBDA{ unimplemented(); } };
+	instructions[0xD9] = { "RETI    " ,1 ,16  ,INSTLAMBDA{ ret(mc); mc.EnableInterrupts(); } };
 	instructions[0xDA] = { "JP C,n16" ,1 ,16  ,INSTLAMBDA{ unimplemented(); } };
 	instructions[0xDB] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{} };
 	instructions[0xDC] = { "CALL C ,n16   " ,3 ,24  ,INSTLAMBDA{ if (mc.GetFlag(Carry_Flag)) { call(mc,op); } } };
 	instructions[0xDD] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{} };
 	instructions[0xDE] = { "SBC A, N8",2 ,8,INSTLAMBDA{ unimplemented(); } };
-	instructions[0xDF] = { "RST 18H ", 1 ,16  ,INSTLAMBDA{ /* Reset*/ } };
+	instructions[0xDF] = { "RST 18H ", 1 ,16  ,INSTLAMBDA{ rst(mc,0x18); } };
 
 	instructions[0xE0] = { "LDH (n), A ",2 ,12  ,INSTLAMBDA{ mc.writeByte(mc.Registers.a,0xFF00 + op); } };
-	instructions[0xE1] = { "POP HL   " ,1 ,20  ,INSTLAMBDA{ unimplemented(); } };
-	instructions[0xF2] = { "LD C, (A)", 2 ,8  ,INSTLAMBDA{ unimplemented(); } };
+	instructions[0xE1] = { "POP HL   " ,1 ,20  ,INSTLAMBDA{ pop(mc,mc.Registers.hl); } };
+	instructions[0xE2] = { "LD (C), A", 2 ,8  ,INSTLAMBDA{ mc.writeByte(mc.Registers.a,mc.Registers.c + 0xFF00); } };
 	instructions[0xE3] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{} };
 	instructions[0xE4] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{} };
-	instructions[0xE5] = { "PUSH HL ", 1, 16, INSTLAMBDA{ unimplemented(); } };
+	instructions[0xE5] = { "PUSH HL ", 1, 16, INSTLAMBDA{ push(mc,mc.Registers.hl); } };
 	instructions[0xE6] = { "AND N8",2 ,8,INSTLAMBDA{ _and(mc,op); } };
-	instructions[0xE7] = { "RST 20H ", 1 ,16  ,INSTLAMBDA{ /* Reset*/ } };
+	instructions[0xE7] = { "RST 20H ", 1 ,16  ,INSTLAMBDA{ rst(mc,0x20); } };
 
 	instructions[0xE8] = { "ADD HL, BC   " ,1 ,16  ,INSTLAMBDA{ add16(mc,mc.Registers.hl,unsigned short(op & 0x00FF)); } };
-	instructions[0xE9] = { "JP (HL)" ,1 ,4  ,INSTLAMBDA{ unimplemented(); } };
-	instructions[0xEA] = { "LD (n16), A ",3 ,16  ,INSTLAMBDA{ mc.Registers.a = mc.readByte(turn(op)); } };
+	instructions[0xE9] = { "JP (HL)" ,1 ,4  ,INSTLAMBDA{ mc.Registers.pc = mc.readShort(mc.Registers.hl); } };
+	instructions[0xEA] = { "LD (n16), A ",3 ,16  ,INSTLAMBDA{ mc.writeByte(mc.Registers.a,op); } };
 	instructions[0xEB] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{} };
 	instructions[0xEC] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{} };
 	instructions[0xED] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{} };
-	instructions[0xEE] = { "XOR  N8",2 ,8,INSTLAMBDA{ unimplemented(); } };
-	instructions[0xEF] = { "RST 18H ", 1 ,16  ,INSTLAMBDA{ /* Reset*/ } };
-
+	instructions[0xEE] = { "XOR  N8",2 ,8,INSTLAMBDA{ _xor(mc,op); } };
+	instructions[0xEF] = { "RST 28H ", 1 ,16  ,INSTLAMBDA{ rst(mc,0x28); } };
 
 	instructions[0xF0] = { "LDH A, (n8) ",2 ,12  ,INSTLAMBDA{ mc.Registers.a = mc.readByte(0xFF00 + op); } };
-	instructions[0xF1] = { "POP AF   " ,1 ,20  ,INSTLAMBDA{ unimplemented(); } };
-	instructions[0xF2] = { "LD A, (C)", 2 ,8  ,INSTLAMBDA{unimplemented(0xF2); } };
-	instructions[0xF3] = { "DI ", 1 ,4  ,INSTLAMBDA{ /* Disable Interrupts*/  } };
+	instructions[0xF1] = { "POP AF   " ,1 ,20  ,INSTLAMBDA{ pop(mc,mc.Registers.af); } };
+	instructions[0xF2] = { "LD A, (C)", 2 ,8  ,INSTLAMBDA{ mc.Registers.a = mc.readByte(0xFF +op); } };
+	instructions[0xF3] = { "DI ", 1 ,4  ,INSTLAMBDA{ mc.DisableInterrupts();  } };
 	instructions[0xF4] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{} };
-	instructions[0xF5] = { "PUSH AF ", 1, 16, INSTLAMBDA{ unimplemented(); } };
+	instructions[0xF5] = { "PUSH AF ", 1, 16, INSTLAMBDA{ push(mc,mc.Registers.af); } };
 	instructions[0xF6] = { "OR N8",2 ,8,INSTLAMBDA{ _or(mc,op); } };
-	instructions[0xF7] = { "RST 30H ", 1 ,16  ,INSTLAMBDA{ /* Reset*/ } };
+	instructions[0xF7] = { "RST 30H ", 1 ,16  ,INSTLAMBDA{ rst(mc,0x30); } };
 
-	instructions[0xF8] = { "LD HL, sp + r8", 2 ,12  ,INSTLAMBDA{ unimplemented(); } };
-	instructions[0xF9] = { "LD SP, HL", 1 ,8  ,INSTLAMBDA{ unimplemented(); } };
-	instructions[0xFA] = { "LD A, n16", 3 ,16  ,INSTLAMBDA{ unimplemented(); } };
-	instructions[0xFB] = { "EI ", 1 ,4  ,INSTLAMBDA{ /* Enable Interrupts*/ } };
+	instructions[0xF8] = { "LD HL, sp + r8", 2 ,12  ,INSTLAMBDA{ mc.Registers.hl = mc.Registers.sp + op; } };
+	instructions[0xF9] = { "LD SP, HL", 1 ,8  ,INSTLAMBDA{ mc.Registers.sp = mc.Registers.hl; } };
+	instructions[0xFA] = { "LD A, (n16)", 3 ,16  ,INSTLAMBDA{ mc.Registers.a = mc.readByte(op); } };
+	instructions[0xFB] = { "EI ", 1 ,4  ,INSTLAMBDA{ mc.EnableInterrupts();  } };
 	instructions[0xFC] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{} };
 	instructions[0xFD] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{} };
-	instructions[0xFE] = { "CP N8",2 ,8,INSTLAMBDA{ unimplemented(); } };
-	instructions[0xFF] = { "RST 38H ", 1 ,16  ,INSTLAMBDA{ /* Reset*/ } };
+	instructions[0xFE] = { "CP N8",2 ,8,INSTLAMBDA{ cp(mc, op); } };
+	instructions[0xFF] = { "RST 38H ", 1 ,16  ,INSTLAMBDA{ rst(mc,0x38); } };
 }

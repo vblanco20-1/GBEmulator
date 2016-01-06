@@ -6,11 +6,20 @@
 #include "Screen.h"
 #include "Gameboy.h"
 #include "GB_Cpu.h"
+#include "Tests.h"
 using namespace std;
 
 int main(int argc, char** argv)
 {
-
+	const bool bRunTests = false;
+	if (bRunTests)
+	{
+		if (!GBTests::TestAll())
+		{
+			cout << "TESTS FAILED" << endl;
+		}
+	}
+	
 	Screen screen;
 	Gameboy machine;
 	GB_Cpu cpu;

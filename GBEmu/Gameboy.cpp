@@ -7,6 +7,7 @@ using namespace std;
 
 Gameboy::Gameboy()
 {
+	reset();
 }
 
 
@@ -29,11 +30,16 @@ unsigned short Gameboy::readShort(unsigned short idx)
 	unsigned short byte2 = readByte(idx + 1);
 	return byte1 | (byte2 << 8);
 }
+void Gameboy::writeShort(unsigned short addr, unsigned short value)
+{
+	writeByte(value & 0x00FF ,addr);
+	writeByte((value & 0xFF00) >> 8,addr+1);
+}
 bool Gameboy::LoadROM(std::string Address)
 {
 	ifstream rom;
 	rom.open(Address, ios::binary);
-
+	reset();
 	if (rom.is_open())
 	{
 		rom.seekg(0, ios::end);

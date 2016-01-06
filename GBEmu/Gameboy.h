@@ -63,9 +63,13 @@ public:
 	void writeByte(byte b, unsigned short idx);
 	byte readByte(unsigned short idx);
 	unsigned short readShort(unsigned short idx);
+	void writeShort(unsigned short addr, unsigned short value);
 	bool LoadROM(std::string Address);
 	void reset();
-	
+
+	void EnableInterrupts() {};
+	void DisableInterrupts() {};
+
 	//32k of memory
 	byte memory[65536];
 	
