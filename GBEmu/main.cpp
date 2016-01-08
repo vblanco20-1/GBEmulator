@@ -23,7 +23,7 @@ int main(int argc, char** argv)
 	Screen screen;
 	Gameboy machine;
 	GB_Cpu cpu;
-	machine.LoadROM("Roms/Tetris.gbc");
+	machine.LoadROM("Roms/Tetris.gb");
 	cpu.buildInstructionsVector();
 	while (true)
 	{

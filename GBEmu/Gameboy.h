@@ -69,7 +69,8 @@ public:
 
 	void EnableInterrupts() {};
 	void DisableInterrupts() {};
-
+	void Stop() {};
+	void Halt() {};
 	//32k of memory
 	byte memory[65536];
 	
