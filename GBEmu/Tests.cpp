@@ -1,6 +1,8 @@
 #include "Tests.h"
 #include "GB_Cpu.h"
 #include <iostream>
+#include <fstream>
+using namespace std;
 bool GBTests::TestStack()
 {
 	Gameboy Machine;
@@ -59,5 +61,78 @@ bool GBTests::TestAll()
 		std::cout << "Testing the stack failed" << std::endl;
 		return false;
 	}
+	if (!TestFlags())
+	{
+		std::cout << "Testing the flags failed" << std::endl;
+		return false;
+	}
 	return true;
+}
+
+bool GBTests::TestFlags()
+{
+	Gameboy mc;
+	mc.ClearFlags(Zero_Flag | Subtract_Flag| Carry_Flag | HalfCarry_Flag);
+
+	if (mc.Registers.f != 0) return false;
+
+	mc.SetFlags(Zero_Flag);
+
+	if (!mc.GetFlag(Zero_Flag))
+	{
+		return false;
+	}
+
+	mc.SetFlags(Carry_Flag);
+
+	if (!mc.GetFlag(Carry_Flag))
+	{
+		return false;
+	}
+	mc.ClearFlags(Zero_Flag);
+	if (mc.GetFlag(Zero_Flag))
+	{
+		return false;
+	}
+
+
+	return true;
+}
+
+void GBTests::DissassembleRom(std::string romfilename, std::string outfilename)
+{
+	ifstream rom;
+	rom.open(romfilename, ios::binary);
+	
+	if (rom.is_open())
+	{
+		rom.seekg(0, ios::end);
+		auto size = rom.tellg();
+		auto memblock = new char[1];
+		rom.seekg(0, ios::beg);
+		ofstream dissasembly;
+		dissasembly.open(outfilename);
+		GB_Cpu cpu;
+		cpu.buildInstructionsVector();
+		for (int i = 0; i < size; i++)
+		{
+			char ch;
+			rom.read(&ch, 1);
+			unsigned char chu = ch;
+			dissasembly <<hex <<i <<":"<< cpu.instructions[chu].dissasembly << endl;
+			i += cpu.instructions[chu].lenght - 1;
+
+		}
+		dissasembly.close();
+		
+
+		//cout << "ROM successfully loaded: " << Address << endl;
+
+		delete[] memblock;
+
+		
+		
+	}
+
+	
 }

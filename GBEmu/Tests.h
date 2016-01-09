@@ -4,6 +4,8 @@
 namespace GBTests {
 	
 
-	bool TestStack();
-	bool TestAll();;
+	 bool TestStack();
+	 bool TestAll();
+	 bool TestFlags();
+	 void DissassembleRom(std::string romfilename, std::string outfilename);
 }

@@ -1,6 +1,8 @@
 #include "GB_Cpu.h"
 
 #include <iostream>
+#include <iomanip>
+#include "Gameboy.h"
 #define INSTLAMBDA  [](Gameboy&mc, unsigned short op)
 using namespace std;
 void rlca(Gameboy&mc)
@@ -13,9 +15,11 @@ void rlca(Gameboy&mc)
 	mc.Registers.a += carry;
 
 	mc.ClearFlags(HalfCarry_Flag| Subtract_Flag| Zero_Flag);
+
+
 	
 }
-void inc(Gameboy&mc,unsigned char& val) {
+unsigned char inc(Gameboy&mc,unsigned char& val) {
 	
 	mc.ClearFlags(Zero_Flag | HalfCarry_Flag | Subtract_Flag);
 
@@ -23,10 +27,11 @@ void inc(Gameboy&mc,unsigned char& val) {
 
 	val++;
 
-	if (val != 0) mc.SetFlags(Zero_Flag);
+	if (val == 0) mc.SetFlags(Zero_Flag);
 	
+	return val;
 }
-void dec(Gameboy&mc, unsigned char& val) {
+unsigned char dec(Gameboy&mc, unsigned char& val) {
 
 	mc.ClearFlags(Zero_Flag | HalfCarry_Flag);
 	mc.SetFlags(Subtract_Flag);
@@ -35,11 +40,13 @@ void dec(Gameboy&mc, unsigned char& val) {
 
 	val--;
 
-	if (val != 0) mc.SetFlags(Zero_Flag);
+	if (val == 0) mc.SetFlags(Zero_Flag);
+
+	return val;
 }
 void add16(Gameboy&mc, unsigned short &A, unsigned short B)
 {
-	unsigned long sum = mc.Registers.a + B;
+	unsigned long sum = A + B;
 
 	mc.ClearFlags(Zero_Flag | HalfCarry_Flag | Carry_Flag | Subtract_Flag);
 
@@ -167,7 +174,7 @@ void pop(Gameboy&mc, unsigned short&data)
 }
 void call(Gameboy&mc, unsigned short addr)
 {	
-	push(mc, addr);
+	push(mc, mc.Registers.pc);
 	mc.Registers.pc = addr;
 }
 void ret(Gameboy&mc)
@@ -186,7 +193,7 @@ void unimplemented(unsigned char opcode = 0) {
 	
 }
 
-void GB_Cpu::StepInstruction(Gameboy&machine)
+uint8_t GB_Cpu::StepInstruction(Gameboy&machine)
 {
 	auto pc = machine.Registers.pc;
 	byte c = machine.readByte(machine.Registers.pc);
@@ -204,14 +211,30 @@ void GB_Cpu::StepInstruction(Gameboy&machine)
 		operands = machine.readShort(pc+1);		
 		machine.Registers.pc+=2;
 	}
-	if (c == 0xCC)
+	
+	if (c == 0 || (c == 0xCC && operands == 0xcccc)) //we fucked up
 	{
 		inst = instructions[c];
 	}
+	if (pc == 0x65 || c == 0xff)
+	{
+		inst = instructions[c];
+	}
+	cycles += inst.cycles;
 	cout.flags(ios::right | ios::hex | ios::showbase);
 	unsigned int t = uint8_t(c);
-	std::cout << inst.dissasembly << " code:" <<std::hex  << t << " operands:" <<  operands <<" pc:" <<pc << std::endl;
+	std::cout << std::setw(10) << std::left<< std::hex << pc  << std::setw(15) << std::left <<  inst.dissasembly  << "c:" << std::setw(10) << t << std::left<<" operands:" << std::setw(0) << std::left <<  operands << std::endl;
 	inst.fn(machine, operands);	
+
+	return inst.cycles;
+
+}
+void GB_Cpu::vblancInterrupt(Gameboy & machine)
+{
+	call(machine,0x0040);
+	machine.DisableInterrupts();
+
+
 }
 unsigned short turn(unsigned short n)
 {
@@ -221,6 +244,10 @@ unsigned short turn(unsigned short n)
 	return (LS << 8) & MS;
 }
 
+void breakp()
+{
+	cout << "breakin" << endl;
+}
 void GB_Cpu::buildInstructionsVector()
 {	
 	//fill instruction array with NOOPs unimplemented
@@ -241,7 +268,7 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0x0B] = { "DEC BC    " ,1 ,8  ,INSTLAMBDA{ mc.Registers.bc--; } };
 	instructions[0x0C] = { "INC C     " ,1 ,4  ,INSTLAMBDA{ inc(mc,mc.Registers.c); } };
 	instructions[0x0D] = { "DEC C	  " ,1 ,4  ,INSTLAMBDA{ dec(mc,mc.Registers.c); } };
-	instructions[0x0E] = { "LD C, n8  " ,1 ,8  ,INSTLAMBDA{ mc.Registers.c = byte(op); } };
+	instructions[0x0E] = { "LD C, n8  " ,2 ,8  ,INSTLAMBDA{ mc.Registers.c = byte(op); } };
 	instructions[0x0F] = { "RRCA      " ,1,4  ,INSTLAMBDA{ unimplemented(0xF); } };
 	
 	instructions[0x10] = { "STOP 0    " ,2 ,4  ,INSTLAMBDA{ mc.Stop(); } };
@@ -251,9 +278,9 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0x14] = { "INC D     " ,1 ,4  ,INSTLAMBDA{ inc(mc,mc.Registers.d); } };
 	instructions[0x15] = { "DEC D     " ,1 ,4  ,INSTLAMBDA{ dec(mc,mc.Registers.d); } };
 	instructions[0x16] = { "LD D, n8  " ,2 ,8  ,INSTLAMBDA{ mc.Registers.d = byte(op); } };
-	instructions[0x17] = { "RLA       " ,1 ,4  ,INSTLAMBDA{ mc.Registers.d = byte(op); } };
+	instructions[0x17] = { "RLA       " ,1 ,4  ,INSTLAMBDA{ unimplemented(); } };
 
-	instructions[0x18] = { "JR n8     " ,2 ,12  ,INSTLAMBDA{ mc.Registers.pc += op; } };
+	instructions[0x18] = { "JR n8     " ,2 ,12  ,INSTLAMBDA{ mc.Registers.pc += int8_t(op); } };
 	instructions[0x19] = { "ADD HL, DE" ,1 ,8  ,INSTLAMBDA{ add16(mc,mc.Registers.hl,mc.Registers.de); } };
 	instructions[0x1A] = { "LD A,(DE) " ,1 ,8  ,INSTLAMBDA{ mc.Registers.a = mc.readByte(mc.Registers.de); } };
 	instructions[0x1B] = { "DEC DE    " ,1 ,8  ,INSTLAMBDA{ mc.Registers.de--; } };
@@ -262,34 +289,34 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0x1E] = { "LD E, n8  " ,2 ,8  ,INSTLAMBDA{ mc.Registers.e = byte(op); } };
 	instructions[0x1F] = { "RRA       " ,1 ,4  ,INSTLAMBDA{ unimplemented(); } };	
 	
-	instructions[0x20] = { "JR NZ, n8"  ,2 ,12  ,INSTLAMBDA{ if (!mc.GetFlag(Zero_Flag)) { mc.Registers.pc += op; }    } };
-	instructions[0x21] = { "LD HL, n16" ,3 ,12  ,INSTLAMBDA{ mc.Registers.hl = op; } };
-	instructions[0x22] = { "LD (HL+), A",1 ,8  ,INSTLAMBDA{ unimplemented(); } };
-	instructions[0x23] = { "INC HL    " ,0 ,8  ,INSTLAMBDA{ mc.Registers.hl++; } };
-	instructions[0x24] = { "INC H     " ,0 ,4  ,INSTLAMBDA{ inc(mc,mc.Registers.h); } };
-	instructions[0x25] = { "DEC H	  " ,0 ,4  ,INSTLAMBDA{ dec(mc,mc.Registers.h); } };
+	instructions[0x20] = { "JR NZ, n8"  ,2 ,12  ,INSTLAMBDA{ if (!mc.GetFlag(Zero_Flag)) { mc.Registers.pc += int8_t(op); }    } };
+	instructions[0x21] = { "LD HL, n16" ,3 ,12  ,INSTLAMBDA{breakp(); mc.Registers.hl = op; } };
+	instructions[0x22] = { "LD (HL+), A",1 ,8  ,INSTLAMBDA{ breakp(); mc.writeByte(mc.Registers.a, mc.Registers.hl); mc.Registers.hl++; } };
+	instructions[0x23] = { "INC HL    " ,1 ,8  ,INSTLAMBDA{ mc.Registers.hl++; } };
+	instructions[0x24] = { "INC H     " ,1 ,4  ,INSTLAMBDA{ inc(mc,mc.Registers.h); } };
+	instructions[0x25] = { "DEC H	  " ,1 ,4  ,INSTLAMBDA{ dec(mc,mc.Registers.h); } };
 	instructions[0x26] = { "LD H, n8  " ,2 ,8  ,INSTLAMBDA{ mc.Registers.h = byte(op); } };
 	instructions[0x27] = { "DAA       " ,1 ,4  ,INSTLAMBDA{ unimplemented(); } };
 
-	instructions[0x28] = { "JR Z, n8"  ,2 ,12  ,INSTLAMBDA{ if (mc.GetFlag(Zero_Flag)) { mc.Registers.pc += op; } } };
+	instructions[0x28] = { "JR Z, n8"  ,2 ,12  ,INSTLAMBDA{ if (mc.GetFlag(Zero_Flag)) { mc.Registers.pc += int8_t(op); ; } } };
 	instructions[0x29] = { "ADD HL, HL   " ,0 ,8  ,INSTLAMBDA{ add16(mc,mc.Registers.hl,mc.Registers.hl); } };
 	instructions[0x2A] = { "LD A,(HL+)" ,1 ,8  ,INSTLAMBDA{ mc.Registers.a = mc.readByte(mc.Registers.hl); mc.Registers.hl++; } };
-	instructions[0x2B] = { "DEC HL    " ,0 ,8  ,INSTLAMBDA{ mc.Registers.hl--; } };
-	instructions[0x2C] = { "INC L     " ,0 ,4  ,INSTLAMBDA{ inc(mc,mc.Registers.l); } };
-	instructions[0x2D] = { "DEC L     " ,0 ,4  ,INSTLAMBDA{ dec(mc,mc.Registers.l); } };
+	instructions[0x2B] = { "DEC HL    " ,1 ,8  ,INSTLAMBDA{ mc.Registers.hl--; } };
+	instructions[0x2C] = { "INC L     " ,1 ,4  ,INSTLAMBDA{ inc(mc,mc.Registers.l); } };
+	instructions[0x2D] = { "DEC L     " ,1 ,4  ,INSTLAMBDA{ dec(mc,mc.Registers.l); } };
 	instructions[0x2E] = { "LD L, n8  " ,2 ,8  ,INSTLAMBDA{ mc.Registers.l = byte(op); } };
 	instructions[0x2F] = { "CPL       " ,1 ,4  ,INSTLAMBDA{ mc.Registers.a = ~mc.Registers.a; } };
 
-	instructions[0x30] = { "JR NC, n8"  ,2 ,12  ,INSTLAMBDA{ if (!mc.GetFlag(Carry_Flag)) { mc.Registers.pc += op; } } };
+	instructions[0x30] = { "JR NC, n8"  ,2 ,12  ,INSTLAMBDA{ if (!mc.GetFlag(Carry_Flag)) { mc.Registers.pc += int8_t(op);; } } };
 	instructions[0x31] = { "LD SP, n16" ,3 ,12  ,INSTLAMBDA{ mc.Registers.sp = op; } };
 	instructions[0x32] = { "LD (HL-), A",1 ,8  ,INSTLAMBDA{ mc.writeByte(mc.Registers.a,mc.Registers.hl); mc.Registers.hl--; } };
 	instructions[0x33] = { "INC SP    " ,1 ,8  ,INSTLAMBDA{ mc.Registers.sp++; } };
-	instructions[0x34] = { "INC (HL)"   ,1 ,12  ,INSTLAMBDA{ unimplemented(); } };
-	instructions[0x35] = { "INC (HL)"   ,1 ,12  ,INSTLAMBDA{ unimplemented(); } };
+	instructions[0x34] = { "INC (HL)"   ,1 ,12  ,INSTLAMBDA{ inc(mc,mc.getByte(mc.Registers.hl)); } };
+	instructions[0x35] = { "DEC (HL)"   ,1 ,12  ,INSTLAMBDA{ dec(mc,mc.getByte(mc.Registers.hl)); } };
 	instructions[0x36] = { "LD (HL), n8",2 ,12  ,INSTLAMBDA{ mc.writeByte(byte(op), mc.Registers.hl); } };
 	instructions[0x37] = { "SCF       " ,1 ,4  ,INSTLAMBDA{ mc.SetFlags(Carry_Flag); } };
 
-	instructions[0x38] = { "JR C, n8"  ,2 ,12  ,INSTLAMBDA{ if (mc.GetFlag(Carry_Flag)) { mc.Registers.pc += op; } } };
+	instructions[0x38] = { "JR C, n8"  ,2 ,12  ,INSTLAMBDA{ if (mc.GetFlag(Carry_Flag)) { mc.Registers.pc += int8_t(op);; } } };
 	instructions[0x39] = { "ADD HL, SP   " ,1 ,8  ,INSTLAMBDA{ add16(mc,mc.Registers.hl,mc.Registers.sp); } };
 	instructions[0x3A] = { "LD A,(HL-)" ,1 ,8  ,INSTLAMBDA{ mc.Registers.a = mc.readByte(mc.Registers.hl); mc.Registers.hl--; } };
 	instructions[0x3B] = { "DEC SP    " ,1 ,8  ,INSTLAMBDA{ mc.Registers.sp--; } };
@@ -442,9 +469,9 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0xBE] = { "CP (HL)" ,1,8,INSTLAMBDA{ cp(mc,mc.readByte(mc.Registers.hl)); } };
 	instructions[0xBF] = { "CP A" ,1 ,4  ,INSTLAMBDA{ cp(mc,mc.Registers.a); } };
 	
-	instructions[0xC0] = { "RET NZ   " ,1 ,20  ,INSTLAMBDA{ if (!mc.GetFlag(Zero_Flag)) { ret(mc); }  } };
+	instructions[0xC0] = { "RET NZ   " ,1 ,20  ,INSTLAMBDA{ if (!mc.GetFlag(Zero_Flag)) { ret(mc); }        } };
 	instructions[0xC1] = { "POP BC   " ,1 ,20  ,INSTLAMBDA{ pop(mc,mc.Registers.bc); } };
-	instructions[0xC2] = { "JP NZ, a16 " ,3 ,16  ,INSTLAMBDA{ unimplemented(0xC2); } };
+	instructions[0xC2] = { "JP NZ, a16 " ,3 ,16  ,INSTLAMBDA{ if (!mc.GetFlag(Zero_Flag)) { mc.Registers.pc = op; }      } };
 	instructions[0xC3] = { "JP a16 " ,3 ,16  ,INSTLAMBDA{ mc.Registers.pc = op; } };
 	instructions[0xC4] = { "CALL NZ ,n16   " ,3 ,24  ,INSTLAMBDA{ if (!mc.GetFlag(Zero_Flag)) { call(mc,op); } } };
 	instructions[0xC5] = { "PUSH BC ", 1, 16, INSTLAMBDA{ push(mc,mc.Registers.bc); } };
@@ -453,8 +480,8 @@ void GB_Cpu::buildInstructionsVector()
 
 	instructions[0xC8] = { "RET Z   " ,1 ,20  ,INSTLAMBDA{ if (mc.GetFlag(Zero_Flag)) { ret(mc); } } };
 	instructions[0xC9] = { "RET     " ,1 ,16  ,INSTLAMBDA{  ret(mc);  } };
-	instructions[0xCA] = { "JP Z, a16 " ,3 ,16  ,INSTLAMBDA{ unimplemented(); } };
-	instructions[0xCB] = { "PREFIX CB " ,1 ,4  ,INSTLAMBDA{ /*unimplemented();*/ } };
+	instructions[0xCA] = { "JP Z, a16 " ,3 ,16  ,INSTLAMBDA{ if (mc.GetFlag(Zero_Flag)) { mc.Registers.pc = op; } } };
+	instructions[0xCB] = { "PREFIX CB " ,2 ,4  ,INSTLAMBDA{ /*unimplemented();*/ } };
 	instructions[0xCC] = { "CALL Z ,n16   " ,3 ,24  ,INSTLAMBDA{ if (mc.GetFlag(Zero_Flag)) { call(mc,op); } } };
 	instructions[0xCD] = { "CALL n16   " ,3 ,12  ,INSTLAMBDA{ call(mc,op); } };
 	instructions[0xCE] = { "ADC A, n8" ,2 ,8  ,INSTLAMBDA{ adc(mc,op); } };
@@ -462,7 +489,7 @@ void GB_Cpu::buildInstructionsVector()
 
 	instructions[0xD0] = { "RET NC   " ,1 ,20  ,INSTLAMBDA{ if (!mc.GetFlag(Carry_Flag)) { ret(mc); } } };
 	instructions[0xD1] = { "POP DE   " ,1 ,20  ,INSTLAMBDA{ pop(mc,mc.Registers.de); } };
-	instructions[0xD2] = { "JP NC, a16 " ,3 ,16  ,INSTLAMBDA{ unimplemented(); } };
+	instructions[0xD2] = { "JP NC, a16 " ,3 ,16  ,INSTLAMBDA{ if (!mc.GetFlag(Carry_Flag)) { mc.Registers.pc = op; } } };
 	instructions[0xD3] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{ } };
 	instructions[0xD4] = { "CALL NC ,n16   " ,3 ,24  ,INSTLAMBDA{ if (!mc.GetFlag(Carry_Flag)) { call(mc,op); } } };
 	instructions[0xD5] = { "PUSH DE ", 1, 16, INSTLAMBDA{ push(mc,mc.Registers.de); } };
@@ -471,7 +498,7 @@ void GB_Cpu::buildInstructionsVector()
 
 	instructions[0xD8] = { "RET C   " ,1 ,20  ,INSTLAMBDA{ if (mc.GetFlag(Carry_Flag)) { ret(mc); } } };
 	instructions[0xD9] = { "RETI    " ,1 ,16  ,INSTLAMBDA{ ret(mc); mc.EnableInterrupts(); } };
-	instructions[0xDA] = { "JP C,n16" ,1 ,16  ,INSTLAMBDA{ unimplemented(); } };
+	instructions[0xDA] = { "JP C,n16" ,3 ,16  ,INSTLAMBDA{ if (mc.GetFlag(Carry_Flag)) { mc.Registers.pc = op; } } };
 	instructions[0xDB] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{} };
 	instructions[0xDC] = { "CALL C ,n16   " ,3 ,24  ,INSTLAMBDA{ if (mc.GetFlag(Carry_Flag)) { call(mc,op); } } };
 	instructions[0xDD] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{} };
@@ -487,7 +514,7 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0xE6] = { "AND N8",2 ,8,INSTLAMBDA{ _and(mc,op); } };
 	instructions[0xE7] = { "RST 20H ", 1 ,16  ,INSTLAMBDA{ rst(mc,0x20); } };
 
-	instructions[0xE8] = { "ADD HL, BC   " ,1 ,16  ,INSTLAMBDA{ add16(mc,mc.Registers.hl,unsigned short(op & 0x00FF)); } };
+	instructions[0xE8] = { "ADD HL, (n8)   " ,2 ,16  ,INSTLAMBDA{ add16(mc,mc.Registers.hl,unsigned short(op & 0x00FF)); } };
 	instructions[0xE9] = { "JP (HL)" ,1 ,4  ,INSTLAMBDA{ mc.Registers.pc = mc.readShort(mc.Registers.hl); } };
 	instructions[0xEA] = { "LD (n16), A ",3 ,16  ,INSTLAMBDA{ mc.writeByte(mc.Registers.a,op); } };
 	instructions[0xEB] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{} };

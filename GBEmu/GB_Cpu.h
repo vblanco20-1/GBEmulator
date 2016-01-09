@@ -1,8 +1,9 @@
 #pragma once
-#include "Gameboy.h"
+//#include "Gameboy.h"
 #include <functional>
 #include <vector>
 
+class Gameboy;
 
 struct instruction {
 	std::string dissasembly;
@@ -13,8 +14,12 @@ struct instruction {
 
 class GB_Cpu {
 public:
+
+	uint64_t cycles{ 0 };
 	std::vector<instruction> instructions;
 	void buildInstructionsVector();
-	void StepInstruction(Gameboy&machine);
+	uint8_t StepInstruction(Gameboy&machine);
+
+	void vblancInterrupt(Gameboy&machine);
 };
 

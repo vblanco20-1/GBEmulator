@@ -11,7 +11,7 @@ Screen::Screen()
 		(
 			"SDL2",
 			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-			1200, 600,
+			256*2, 256*2,
 			SDL_WINDOW_SHOWN
 			);
 
@@ -74,6 +74,26 @@ bool Screen::TogglePixel(unsigned short x, unsigned short y)
 
 }
 
+void Screen::SetPixel(unsigned short x, unsigned short y, int color)
+{
+	const unsigned int offset = (ScreenWidth * 4 * y) + x * 4;
+	char pxC = 0;
+	switch (color)
+	{
+	case 0:pxC = 0; break;
+	case 1:pxC = 100; break;
+	case 2:pxC = 180; break;
+	case 3:pxC = 255; break;
+		
+	}
+
+	
+	pixels[offset + 0] = pxC;        // b
+	pixels[offset + 1] = pxC;        // g
+	pixels[offset + 2] = pxC;        // r
+	pixels[offset + 3] = SDL_ALPHA_OPAQUE;    // a		
+}
+
 void Screen::Clear()
 {
 	for (auto &p : pixels)
@@ -97,4 +117,56 @@ void Screen::DrawFrame()
 
 	SDL_RenderCopy(renderer, texture, NULL, NULL);
 	SDL_RenderPresent(renderer);
+}
+
+void Screen::DrawTile(std::vector<uint8_t> &tile, uint32_t x, uint32_t y)
+{
+	int yi = 0;
+	while (yi < 8)
+	{
+		int xi = 0;
+		while (xi < 8)
+		{
+			uint8_t bit1 = (tile[yi * 2] >> xi) & 0x1;
+			uint8_t bit2 = (tile[yi * 2 + 1] >> xi) & 0x1;
+
+			uint8_t c = bit1 + (bit2 << 1);
+
+			SetPixel(x+ (7- xi), y+yi, c);
+
+			xi++;
+		}
+
+		yi++;
+	}
+	
+}
+
+void Screen::TestDraw(unsigned char*first, unsigned int sprites)
+{
+	const int memoffset = 64; //64 bytes per sprite
+	
+	int i = 0;
+	int spritedata[16];
+	for (i = 0; i < 16; i++);
+	{
+		spritedata[i] = *(first + i);
+	}
+
+	int x, y;
+	x = 0;
+	y = 0;
+	for (y = 0; y < 8; y++);
+	{
+		for (x= 0; x < 8; x++);
+		{
+			unsigned char bit1 = (spritedata[y * 2] >> x) & 0x1;
+			unsigned char bit2 = (spritedata[y * 2 + 1] >> x) & 0x1;
+
+			unsigned char c = bit1 + (bit2 << 1);
+
+			SetPixel(x, y, c);
+		}
+	}
+
 }

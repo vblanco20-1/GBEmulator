@@ -20,14 +20,12 @@ int main(int argc, char** argv)
 		}
 	}
 	
-	Screen screen;
+	
 	Gameboy machine;
-	GB_Cpu cpu;
-	machine.LoadROM("Roms/Tetris.gb");
-	cpu.buildInstructionsVector();
-	while (true)
-	{
-		cpu.StepInstruction(machine);
-	}
+	
+	//GBTests::DissassembleRom("Roms/Opus5.gb", "dissasembly.txt");
+	//machine.LoadROM("Roms/Tetris.gb");
+	machine.LoadROM("Roms/Opus5.gb");
+	machine.Run();
 	return 0;
 }
