@@ -223,7 +223,7 @@ uint8_t GB_Cpu::StepInstruction(Gameboy&machine)
 	cycles += inst.cycles;
 	cout.flags(ios::right | ios::hex | ios::showbase);
 	unsigned int t = uint8_t(c);
-	std::cout << std::setw(10) << std::left<< std::hex << pc  << std::setw(15) << std::left <<  inst.dissasembly  << "c:" << std::setw(10) << t << std::left<<" operands:" << std::setw(0) << std::left <<  operands << std::endl;
+	//std::cout << std::setw(10) << std::left<< std::hex << pc  << std::setw(15) << std::left <<  inst.dissasembly  << "c:" << std::setw(10) << t << std::left<<" operands:" << std::setw(0) << std::left <<  operands << std::endl;
 	inst.fn(machine, operands);	
 
 	return inst.cycles;

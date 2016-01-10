@@ -76,6 +76,15 @@ bool Screen::TogglePixel(unsigned short x, unsigned short y)
 
 void Screen::SetPixel(unsigned short x, unsigned short y, int color)
 {
+	if (x < 0 || x > 255)
+	{
+		return;
+	}
+	if (y < 0 || y > 255)
+	{
+		return;
+	}
+
 	const unsigned int offset = (ScreenWidth * 4 * y) + x * 4;
 	char pxC = 0;
 	switch (color)
@@ -104,6 +113,7 @@ void Screen::Clear()
 
 void Screen::DrawFrame()
 {
+	DrawBackground();
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
 	SDL_RenderClear(renderer);
 
@@ -169,4 +179,28 @@ void Screen::TestDraw(unsigned char*first, unsigned int sprites)
 		}
 	}
 
+}
+
+void Screen::DrawBackground()
+{
+	//tilemap
+	for (int ty = 0; ty < 32; ty++)
+	{
+		for (int tx = 0; tx < 32; tx++)
+		{
+			uint8_t tilenumber = vram[0x1800 + tx + ty * 32];
+
+			std::vector<uint8_t> tile(16);
+
+			for (int i = 0; i < 16; i++)
+			{
+				
+					tile[i] = vram[ i + tilenumber * 16];
+				
+
+			}
+
+			DrawTile(tile, tx * 8, ty * 8);
+		}
+	}
 }

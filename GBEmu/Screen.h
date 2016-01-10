@@ -21,7 +21,13 @@ public:
 	
 	void SetScrollX(uint8_t scrollx) {};
 	void SetScrollY(uint8_t scrolly) {};
+
+	void DrawBackground();
+
+	uint8_t vram[0xF000];
 private:
+	
+
 
 	SDL_Window* window;
 	SDL_Renderer* renderer;
