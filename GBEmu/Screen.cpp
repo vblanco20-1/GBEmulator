@@ -205,11 +205,11 @@ void Screen::DrawTile(std::vector<uint8_t> &tile, uint32_t x, uint32_t y)
 void Screen::DrawTile(uint8_t tilenumber, uint32_t x, uint32_t y)
 {
 	SDL_Rect tst;
-	tst.h = 16;
-	tst.w = 16;
+	tst.h = 8;
+	tst.w = 8;
 
-	tst.x = x * 2;
-	tst.y = y * 2;
+	tst.x = x;
+	tst.y = y;
 
 	SDL_RenderCopy(renderer, tileMap, &GetTileRect(tilenumber), &tst);
 }
@@ -277,19 +277,18 @@ void Screen::DrawBackground()
 			//std::vector<uint8_t> tile = getTile(tilenumber);
 
 			SDL_Rect tst;
-			tst.h = 16;
-			tst.w = 16;
+			tst.h = 8;
+			tst.w = 8;
 
-			tst.x = tx*16 + scrollX*2;
-			tst.y = ty*16 + scrollY*2;
-
+			tst.x = tx*8 + scrollX;
+			tst.y = ty *8 + scrollY;
 			SDL_RenderCopy(renderer, tileMap, &GetTileRect(tilenumber), &tst);
 
 			tst.x -= 256;
 			SDL_RenderCopy(renderer, tileMap, &GetTileRect(tilenumber), &tst);
 
 			tst.x += 256;
-			tst.y -= 256;
+			tst.y += 256;
 			SDL_RenderCopy(renderer, tileMap, &GetTileRect(tilenumber), &tst);
 
 			tst.x -= 256;
@@ -312,6 +311,11 @@ std::vector<uint8_t> Screen::getTile(uint16_t tilenumber)
 	}
 
 	return tile;
+}
+
+void Screen::writeByte(uint16_t address, uint8_t byte)
+{
+	vram[address - 0x8000] = byte;
 }
 
 SDL_Rect Screen::GetTileRect(uint8_t tilenumber)

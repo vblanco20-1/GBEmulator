@@ -216,14 +216,14 @@ uint8_t GB_Cpu::StepInstruction(Gameboy&machine)
 	{
 		inst = instructions[c];
 	}
-	if (pc == 0x65 || c == 0xff)
+	if (pc == 0x8A || c == 0xff)
 	{
 		inst = instructions[c];
 	}
 	cycles += inst.cycles;
 	cout.flags(ios::right | ios::hex | ios::showbase);
 	unsigned int t = uint8_t(c);
-	//std::cout << std::setw(10) << std::left<< std::hex << pc  << std::setw(15) << std::left <<  inst.dissasembly  << "c:" << std::setw(10) << t << std::left<<" operands:" << std::setw(0) << std::left <<  operands << std::endl;
+//	std::cout << std::setw(10) << std::left<< std::hex << pc  << std::setw(15) << std::left <<  inst.dissasembly  << "c:" << std::setw(10) << t << std::left<<" operands:" << std::setw(0) << std::left <<  operands << std::endl;
 	inst.fn(machine, operands);	
 
 	return inst.cycles;
@@ -246,7 +246,162 @@ unsigned short turn(unsigned short n)
 
 void breakp()
 {
-	//cout << "breakin" << endl;
+	cout << "breakin" << endl;
+}
+
+static uint8_t swap(Gameboy&mc,uint8_t val)
+{
+	val = ((val & 0xf) << 4) | ((val & 0xf0) >> 4);
+
+	mc.ClearFlags(Subtract_Flag | HalfCarry_Flag | Carry_Flag);
+
+	if (!val) mc.SetFlags(Zero_Flag);		
+
+	return val;
+}
+void checkbit(Gameboy&machine, uint8_t reg, uint8_t bit)
+{
+	machine.SetFlags(HalfCarry_Flag);
+	machine.ClearFlags(Subtract_Flag | Zero_Flag);
+
+	if ((reg &(1 << bit)) == 0)
+	{
+		machine.SetFlags(Zero_Flag);
+	}
+
+}
+
+static uint8_t srl(Gameboy&mc,uint8_t value) {
+	if (value & 0x01) mc.SetFlags(Carry_Flag);
+	else mc.ClearFlags(Carry_Flag);
+
+	value >>= 1;
+
+	if (value) mc.ClearFlags(Zero_Flag);
+	else mc.SetFlags(Zero_Flag);
+
+	mc.ClearFlags(Subtract_Flag | HalfCarry_Flag);
+
+	return value;
+}
+
+static uint8_t sla(Gameboy&mc, uint8_t value) {
+	if (value & 0x80) mc.SetFlags(Carry_Flag);
+	else mc.ClearFlags(Carry_Flag);
+
+	value <<= 1;
+
+	if (value) mc.ClearFlags(Zero_Flag);
+	else mc.SetFlags(Zero_Flag);
+
+	mc.ClearFlags(Subtract_Flag | HalfCarry_Flag);
+
+	return value;
+}
+
+
+static uint8_t rl(Gameboy&mc, uint8_t value) {
+	int carry = mc.GetFlag(Carry_Flag) ? 1 : 0;
+
+	if (value & 0x80) mc.SetFlags(Carry_Flag);
+	else mc.ClearFlags(Carry_Flag);
+
+
+	value <<= 1;
+	value += carry;
+
+	if (value) mc.ClearFlags(Zero_Flag);
+	else mc.SetFlags(Zero_Flag);
+
+	mc.ClearFlags(Subtract_Flag | HalfCarry_Flag);
+
+
+	return value;
+}
+
+static uint8_t rr(Gameboy&mc, uint8_t value) {
+	value >>= 1;
+	if (mc.GetFlag(Carry_Flag)) value |= 0x80;
+
+	if (value & 0x01) mc.SetFlags(Carry_Flag);
+	else mc.ClearFlags(Carry_Flag);
+
+
+	if (value) mc.ClearFlags(Zero_Flag);
+	else mc.SetFlags(Zero_Flag);
+
+	mc.ClearFlags(Subtract_Flag | HalfCarry_Flag);
+
+	return value;
+}
+
+void prefixCB(Gameboy&machine, uint16_t op)
+{
+	if (op == 0x0037)
+	{
+		machine.Registers.a = swap(machine,machine.Registers.a);
+	}
+	else if (op == 0x007f)
+	{
+		checkbit(machine, machine.Registers.a, 7);
+	}
+	else if (op == 0x0077)
+	{
+		checkbit(machine, machine.Registers.a, 6);
+	}
+	else if (op == 0x0067)
+	{
+		checkbit(machine, machine.Registers.a, 4);
+	}
+	else if (op == 0x006f)
+	{
+		checkbit(machine, machine.Registers.a, 5);
+	}
+	else if (op == 0x0047)
+	{
+		checkbit(machine, machine.Registers.a, 0);
+	}
+	else if (op == 0x004f)
+	{
+		checkbit(machine, machine.Registers.a, 1);
+	}
+	else if (op == 0x003f)
+	{
+		machine.Registers.a = srl(machine, machine.Registers.a);
+	}
+	else if (op == 0x0023)
+	{
+		machine.Registers.e = sla(machine, machine.Registers.e);
+	}
+	else if (op == 0x0027)
+	{
+		machine.Registers.a = sla(machine, machine.Registers.a);
+	}
+	
+	else if (op == 0x0012)
+	{
+		machine.Registers.d = rl(machine, machine.Registers.d);
+	}
+	else if (op == 0x003c)
+	{
+		machine.Registers.h = srl(machine, machine.Registers.h);
+	}
+	else if (op == 0x003d)
+	{
+		machine.Registers.d = srl(machine, machine.Registers.d);
+	}
+	else if (op == 0x001d)
+	{
+		machine.Registers.l = rr(machine, machine.Registers.l);
+	}
+	else if (op == 0x001c)
+	{
+		machine.Registers.h = rr(machine, machine.Registers.h);
+	}
+	//else
+	//{
+	//	cout << "CB unimplemented" << endl;
+	//}
 }
 void GB_Cpu::buildInstructionsVector()
 {	
@@ -481,7 +636,7 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0xC8] = { "RET Z   " ,1 ,20  ,INSTLAMBDA{ if (mc.GetFlag(Zero_Flag)) { ret(mc); } } };
 	instructions[0xC9] = { "RET     " ,1 ,16  ,INSTLAMBDA{  ret(mc);  } };
 	instructions[0xCA] = { "JP Z, a16 " ,3 ,16  ,INSTLAMBDA{ if (mc.GetFlag(Zero_Flag)) { mc.Registers.pc = op; } } };
-	instructions[0xCB] = { "PREFIX CB " ,2 ,4  ,INSTLAMBDA{ /*unimplemented();*/ } };
+	instructions[0xCB] = { "PREFIX CB " ,2 ,4  ,INSTLAMBDA{ prefixCB(mc,op); } };
 	instructions[0xCC] = { "CALL Z ,n16   " ,3 ,24  ,INSTLAMBDA{ if (mc.GetFlag(Zero_Flag)) { call(mc,op); } } };
 	instructions[0xCD] = { "CALL n16   " ,3 ,12  ,INSTLAMBDA{ call(mc,op); } };
 	instructions[0xCE] = { "ADC A, n8" ,2 ,8  ,INSTLAMBDA{ adc(mc,op); } };

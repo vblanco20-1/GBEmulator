@@ -21,6 +21,7 @@ bool getbit(uint8_t byte, int nbit)
 }
 
 
+
 void Gameboy::writeByte(byte b, unsigned short idx)
 {
 	if (idx == 0xFF40)
@@ -37,7 +38,8 @@ void Gameboy::writeByte(byte b, unsigned short idx)
 	if (idx >= 0x8000 && idx <= 0xA000)
 	{
 		cout << "Graphics edit "<< hex << b << endl;
-		GBScreen.vram[idx - 0x8000] = b;
+		GBScreen.writeByte(idx, b);
+		//GBScreen.vram[idx - 0x8000] = b;
 	}
 	if (idx >= 0x0000 && idx < 0x8000)
 	{
@@ -67,9 +69,42 @@ void Gameboy::writeByte(byte b, unsigned short idx)
 		for (int i = 0; i < 140; i++)
 		{
 			memory[0xfe00 + i] = memory[start + i];
+			GBScreen.writeByte(0xfe00 + i, memory[start + i]);
 		}
-
 	}
+	if (idx == 0xff00) // input
+	{
+		if (b == 0x20) // bit 5,p14
+		{
+			
+			const uint8_t* keys = SDL_GetKeyboardState(nullptr);
+
+			if (keys[SDL_SCANCODE_UP]  )
+			{
+				memory[0xff00] |= 1 << 3;
+			}
+			if (keys[SDL_SCANCODE_DOWN])
+			{
+				memory[0xff00] |= 1 << 2;
+			}
+			if (keys[SDL_SCANCODE_LEFT])
+			{
+				memory[0xff00] |= 1 << 1;
+			}
+			if (keys[SDL_SCANCODE_RIGHT])
+			{
+				memory[0xff00] |= 1 << 0;
+			}
+
+			return;
+		}
+		else if (b == 0x10) //p15
+		{
+			return;
+		}
+	}
+
+
 	memory[idx] = b;
 }
 
