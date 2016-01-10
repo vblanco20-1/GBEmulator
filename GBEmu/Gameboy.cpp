@@ -159,37 +159,37 @@ void Gameboy::Run()
 				CPU.vblancInterrupt(*this);
 			}
 			
-			
-			//for (int x = 0; x < 50; x++)
-			//{
-			//	std::vector<uint8_t> testtile(16);
-			//	for (int i = 0; i < 16; i++)
-			//	{
-			//		testtile[i] = memory[0x4000 + i + x * 16];
-			//	}
-			//	GBScreen.DrawTile(testtile, (x % 10) * 8, (x / 10) * 8);
-			//}
+			/*
+			for (int x = 0; x < 50; x++)
+			{
+				std::vector<uint8_t> testtile(16);
+				for (int i = 0; i < 16; i++)
+				{
+					testtile[i] = memory[0x4000 + i + x * 16];
+				}
+				GBScreen.DrawTile(testtile, (x % 10) * 8, (x / 10) * 8);
+			}
 
-			//for (int x = 0; x < 50; x++)
-			//{
-			//	std::vector<uint8_t> testtile(16);
-			//	for (int i = 0; i < 16; i++)
-			//	{
-			//		testtile[i] = memory[0xfe00 + i + x * 16];
-			//	}
-			//	GBScreen.DrawTile(testtile, (x % 10) * 8, 50 + (x / 10) * 8);
-			//}
+			for (int x = 0; x < 50; x++)
+			{
+				std::vector<uint8_t> testtile(16);
+				for (int i = 0; i < 16; i++)
+				{
+					testtile[i] = memory[0xfe00 + i + x * 16];
+				}
+				GBScreen.DrawTile(testtile, (x % 10) * 8, 50 + (x / 10) * 8);
+			}
 
-			//for (int x = 0; x < 50; x++)
-			//{
-			//	std::vector<uint8_t> testtile(16);
-			//	for (int i = 0; i < 16; i++)
-			//	{
-			//		testtile[i] = memory[0x8000 + i + x * 16];
-			//	}
-			//	GBScreen.DrawTile(testtile, (x % 10) * 8, 100 + (x / 10) * 8);
-			//}
-			cout << "VBlanc frame" << endl;
+			for (int x = 0; x < 50; x++)
+			{
+				std::vector<uint8_t> testtile(16);
+				for (int i = 0; i < 16; i++)
+				{
+					testtile[i] = memory[0x8000 + i + x * 16];
+				}
+				GBScreen.DrawTile(testtile, (x % 10) * 8, 100 + (x / 10) * 8);
+			}*/
+			//cout << "VBlanc frame" << endl;
 			GBScreen.DrawFrame();
 		}
 		
