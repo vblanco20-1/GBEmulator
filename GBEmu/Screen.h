@@ -23,6 +23,9 @@ public:
 	void SetScrollY(uint8_t scrolly) {};
 
 	void DrawBackground();
+	void DrawSprites();
+
+	std::vector<uint8_t> getTile(uint16_t tilenumber);
 
 	uint8_t vram[0xF000];
 private:

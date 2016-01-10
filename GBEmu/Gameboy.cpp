@@ -189,7 +189,7 @@ void Gameboy::Run()
 			//	}
 			//	GBScreen.DrawTile(testtile, (x % 10) * 8, 100 + (x / 10) * 8);
 			//}
-
+			cout << "VBlanc frame" << endl;
 			GBScreen.DrawFrame();
 		}
 		

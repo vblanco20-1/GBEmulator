@@ -114,6 +114,7 @@ void Screen::Clear()
 void Screen::DrawFrame()
 {
 	DrawBackground();
+	DrawSprites();
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
 	SDL_RenderClear(renderer);
 
@@ -190,17 +191,43 @@ void Screen::DrawBackground()
 		{
 			uint8_t tilenumber = vram[0x1800 + tx + ty * 32];
 
-			std::vector<uint8_t> tile(16);
+			std::vector<uint8_t> tile = getTile(tilenumber);
 
-			for (int i = 0; i < 16; i++)
-			{
-				
-					tile[i] = vram[ i + tilenumber * 16];
-				
-
-			}
-
+			
 			DrawTile(tile, tx * 8, ty * 8);
 		}
 	}
+}
+std::vector<uint8_t> Screen::getTile(uint16_t tilenumber)
+{
+	std::vector<uint8_t> tile(16);
+
+	for (int i = 0; i < 16; i++)
+	{
+		tile[i] = vram[i + tilenumber * 16];
+	}
+
+	return tile;
+}
+
+void Screen::DrawSprites()
+{
+	
+
+	for (int i = 0; i < 10; i++)
+	{
+		uint8_t spritedata[4];
+
+		spritedata[0] = vram[0xfe00 - 0x8000 + i * 4 + 0];
+		spritedata[1] = vram[0xfe00 - 0x8000 + i * 4 + 1];
+		spritedata[2] = vram[0xfe00 - 0x8000 + i * 4 + 2];
+		spritedata[3] = vram[0xfe00 - 0x8000 + i * 4 + 3];
+
+		int posx = spritedata[0];
+		int posy = spritedata[1];
+		int pattern = spritedata[2];
+
+		DrawTile(getTile(pattern),posx, posy);
+	}
+
 }

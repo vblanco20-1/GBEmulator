@@ -246,7 +246,7 @@ unsigned short turn(unsigned short n)
 
 void breakp()
 {
-	cout << "breakin" << endl;
+	//cout << "breakin" << endl;
 }
 void GB_Cpu::buildInstructionsVector()
 {	
@@ -290,8 +290,8 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0x1F] = { "RRA       " ,1 ,4  ,INSTLAMBDA{ unimplemented(); } };	
 	
 	instructions[0x20] = { "JR NZ, n8"  ,2 ,12  ,INSTLAMBDA{ if (!mc.GetFlag(Zero_Flag)) { mc.Registers.pc += int8_t(op); }    } };
-	instructions[0x21] = { "LD HL, n16" ,3 ,12  ,INSTLAMBDA{breakp(); mc.Registers.hl = op; } };
-	instructions[0x22] = { "LD (HL+), A",1 ,8  ,INSTLAMBDA{ breakp(); mc.writeByte(mc.Registers.a, mc.Registers.hl); mc.Registers.hl++; } };
+	instructions[0x21] = { "LD HL, n16" ,3 ,12  ,INSTLAMBDA{ mc.Registers.hl = op; } };
+	instructions[0x22] = { "LD (HL+), A",1 ,8  ,INSTLAMBDA{  mc.writeByte(mc.Registers.a, mc.Registers.hl); mc.Registers.hl++; } };
 	instructions[0x23] = { "INC HL    " ,1 ,8  ,INSTLAMBDA{ mc.Registers.hl++; } };
 	instructions[0x24] = { "INC H     " ,1 ,4  ,INSTLAMBDA{ inc(mc,mc.Registers.h); } };
 	instructions[0x25] = { "DEC H	  " ,1 ,4  ,INSTLAMBDA{ dec(mc,mc.Registers.h); } };
