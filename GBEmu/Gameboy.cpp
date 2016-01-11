@@ -346,3 +346,8 @@ bool Gameboy::GetFlag(unsigned char flag)
 	return ((Registers.f & flag) != 0) ;
 }
 
+void Gameboy::UpdateInterrupts(int time)
+{
+
+}
+

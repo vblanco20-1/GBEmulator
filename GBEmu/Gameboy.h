@@ -88,7 +88,7 @@ public:
 	void ClearFlags(unsigned char flags);
 	bool GetFlag(unsigned char flag);
 
-
+	void UpdateInterrupts(int time);
 };
 static bool getbit(uint8_t byte, int nbit) {
 	return (byte >> nbit) & 1;
