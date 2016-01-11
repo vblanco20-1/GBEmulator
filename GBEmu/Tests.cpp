@@ -136,3 +136,20 @@ void GBTests::DissassembleRom(std::string romfilename, std::string outfilename)
 
 	
 }
+
+bool GBTests::TestCheckbit()
+{
+	Gameboy mc;
+	mc.ClearFlags(Zero_Flag);
+	uint8_t val = 0;
+	checkbit(mc, val, 1);
+
+
+	if (!mc.GetFlag(Zero_Flag))
+	{
+		return false;
+	}
+
+	val = 1 << 0;
+	checkbit(mc, val, 1);
+}

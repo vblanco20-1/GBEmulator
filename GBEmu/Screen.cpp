@@ -1,4 +1,5 @@
 #include "Screen.h"
+#include "Gameboy.h"
 #include <iostream>
 using namespace std;
 
@@ -19,7 +20,7 @@ Screen::Screen()
 		(
 			window,
 			-1,
-			SDL_RENDERER_ACCELERATED
+			SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
 			);
 
 	SDL_RendererInfo info;
@@ -272,7 +273,7 @@ void Screen::DrawBackground()
 	{
 		for (int tx = 0; tx < 32; tx++)
 		{
-			uint8_t tilenumber = vram[0x1800 + tx + ty * 32];
+			uint8_t tilenumber = vram[(BGMapAdress - 0x8000) + tx + ty * 32];
 
 			//std::vector<uint8_t> tile = getTile(tilenumber);
 
@@ -280,15 +281,15 @@ void Screen::DrawBackground()
 			tst.h = 8;
 			tst.w = 8;
 
-			tst.x = tx*8 + scrollX;
-			tst.y = ty *8 + scrollY;
+			tst.x = tx*8 + 256-scrollX;
+			tst.y = ty *8 + 256-scrollY;
 			SDL_RenderCopy(renderer, tileMap, &GetTileRect(tilenumber), &tst);
 
 			tst.x -= 256;
 			SDL_RenderCopy(renderer, tileMap, &GetTileRect(tilenumber), &tst);
 
 			tst.x += 256;
-			tst.y += 256;
+			tst.y -= 256;
 			SDL_RenderCopy(renderer, tileMap, &GetTileRect(tilenumber), &tst);
 
 			tst.x -= 256;
@@ -331,6 +332,13 @@ SDL_Rect Screen::GetTileRect(uint8_t tilenumber)
 	return rect;
 }
 
+void Screen::SetMapAdress(uint16_t address)
+{
+	BGMapAdress = address;
+	cout << "map adress is" << hex << address;
+	return;
+}
+
 void Screen::UpdateTilemap()
 {
 	for (int y = 0; y < 16; y++)
@@ -371,5 +379,34 @@ void Screen::DrawSprites()
 
 void Screen::DrawSprite(Sprite sprite)
 {
-	DrawTile(sprite.Tile, sprite.posX, sprite.posY);
+
+	SDL_Rect tst;
+	tst.h = 8;
+	tst.w = 8;
+
+	tst.x = 8 + sprite.posX - 8;
+	tst.y = 8 + sprite.posY - 16;
+
+	bool flipY = getbit(sprite.Flags, 6);
+	bool flipX = getbit(sprite.Flags,5);
+
+	int flip = SDL_FLIP_NONE;
+	if (flipX && flipY)
+	{
+		flip = SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL;
+	}
+	else if (flipY)
+	{
+		flip = SDL_FLIP_VERTICAL;
+	}
+	else if (flipX)
+	{
+		flip = SDL_FLIP_HORIZONTAL ;
+	}
+	
+	SDL_RenderCopyEx(renderer, tileMap, &GetTileRect(sprite.Tile), &tst, 0, nullptr, SDL_RendererFlip(flip));
+
+	
+
+	//DrawTile(sprite.Tile, sprite.posX, sprite.posY);
 }

@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <bitset>
 #include "Gameboy.h"
 #define INSTLAMBDA  [](Gameboy&mc, unsigned short op)
 using namespace std;
@@ -23,9 +24,10 @@ unsigned char inc(Gameboy&mc,unsigned char& val) {
 	
 	mc.ClearFlags(Zero_Flag | HalfCarry_Flag | Subtract_Flag);
 
+	val++;
 	if ((val & 0x0f) == 0x0f)	mc.SetFlags(HalfCarry_Flag);
 
-	val++;
+	
 
 	if (val == 0) mc.SetFlags(Zero_Flag);
 	
@@ -35,10 +37,10 @@ unsigned char dec(Gameboy&mc, unsigned char& val) {
 
 	mc.ClearFlags(Zero_Flag | HalfCarry_Flag);
 	mc.SetFlags(Subtract_Flag);
+	val--;
 
 	if ((val & 0x0f) )	mc.SetFlags(HalfCarry_Flag);
 
-	val--;
 
 	if (val == 0) mc.SetFlags(Zero_Flag);
 
@@ -223,7 +225,7 @@ uint8_t GB_Cpu::StepInstruction(Gameboy&machine)
 	cycles += inst.cycles;
 	cout.flags(ios::right | ios::hex | ios::showbase);
 	unsigned int t = uint8_t(c);
-	std::cout << std::setw(10) << std::left<< std::hex << pc  << std::setw(15) << std::left <<  inst.dissasembly  << "c:" << std::setw(10) << t << std::left<<" operands:" << std::setw(0) << std::left <<  operands << std::endl;
+	//std::cout << std::setw(10) << std::left<< std::hex << pc  << std::setw(15) << std::left <<  inst.dissasembly  << "c:" << std::setw(10) << t << std::left<<" operands:" << std::setw(0) << std::left <<  operands << std::endl;
 	inst.fn(machine, operands);	
 
 	return inst.cycles;
@@ -272,8 +274,17 @@ void checkbit(Gameboy&machine, uint8_t reg, uint8_t bit)
 }
 
 static uint8_t srl(Gameboy&mc,uint8_t value) {
-	if (value & 0x01) mc.SetFlags(Carry_Flag);
-	else mc.ClearFlags(Carry_Flag);
+
+	
+
+	if (value & 1)
+	{
+		mc.SetFlags(Carry_Flag);
+	}
+	else
+	{
+		mc.ClearFlags(Carry_Flag);
+	}
 
 	value >>= 1;
 
@@ -281,13 +292,21 @@ static uint8_t srl(Gameboy&mc,uint8_t value) {
 	else mc.SetFlags(Zero_Flag);
 
 	mc.ClearFlags(Subtract_Flag | HalfCarry_Flag);
-
+	
 	return value;
 }
 
 static uint8_t sla(Gameboy&mc, uint8_t value) {
-	if (value & 0x80) mc.SetFlags(Carry_Flag);
-	else mc.ClearFlags(Carry_Flag);
+	
+
+	if (value & (1 << 7))
+	{
+		mc.SetFlags(Carry_Flag);
+	}
+	else 
+	{
+		mc.ClearFlags(Carry_Flag);
+	}
 
 	value <<= 1;
 
@@ -295,35 +314,45 @@ static uint8_t sla(Gameboy&mc, uint8_t value) {
 	else mc.SetFlags(Zero_Flag);
 
 	mc.ClearFlags(Subtract_Flag | HalfCarry_Flag);
-
+	
 	return value;
 }
 
 
 static uint8_t rl(Gameboy&mc, uint8_t value) {
+	//cout << "RL " << bitset<8>(value) << "c="<< mc.GetFlag(Carry_Flag);
+
+	bool bit7 = (value & (1 << 7));
+
 	int carry = mc.GetFlag(Carry_Flag) ? 1 : 0;
 
-	if (value & 0x80) mc.SetFlags(Carry_Flag);
+	value <<= 1;
+	value |= carry;
+	//value += carry;
+
+	if (bit7) mc.SetFlags(Carry_Flag);
 	else mc.ClearFlags(Carry_Flag);
 
-
-	value <<= 1;
-	value += carry;
-
+	//int oldbit7 = getbit(value, 7);
+	
+	//value &= oldbit7;
 	if (value) mc.ClearFlags(Zero_Flag);
 	else mc.SetFlags(Zero_Flag);
 
 	mc.ClearFlags(Subtract_Flag | HalfCarry_Flag);
 
-
+	//cout << "      RL result " << bitset<8>(value) <<  " carry = " << mc.GetFlag(Carry_Flag) << endl;
 	return value;
 }
 
 static uint8_t rr(Gameboy&mc, uint8_t value) {
+
+	bool bit0 = (value & 0x01);
+
 	value >>= 1;
 	if (mc.GetFlag(Carry_Flag)) value |= 0x80;
 
-	if (value & 0x01) mc.SetFlags(Carry_Flag);
+	if (bit0) mc.SetFlags(Carry_Flag);
 	else mc.ClearFlags(Carry_Flag);
 
 
@@ -377,7 +406,6 @@ void prefixCB(Gameboy&machine, uint16_t op)
 	{
 		machine.Registers.a = sla(machine, machine.Registers.a);
 	}
-	
 	else if (op == 0x0012)
 	{
 		machine.Registers.d = rl(machine, machine.Registers.d);
@@ -428,7 +456,7 @@ void GB_Cpu::buildInstructionsVector()
 	
 	instructions[0x10] = { "STOP 0    " ,2 ,4  ,INSTLAMBDA{ mc.Stop(); } };
 	instructions[0x11] = { "LD DE, n16" ,3 ,12  ,INSTLAMBDA{ mc.Registers.de = op; } };
-	instructions[0x12] = { "LD (DE+), A",1 ,8  ,INSTLAMBDA{ mc.writeByte(mc.Registers.a,mc.Registers.de); } };
+	instructions[0x12] = { "LD (DE), A",1 ,8  ,INSTLAMBDA{ mc.writeByte(mc.Registers.a,mc.Registers.de); } };
 	instructions[0x13] = { "INC DE    " ,1 ,8  ,INSTLAMBDA{ mc.Registers.de++; } };
 	instructions[0x14] = { "INC D     " ,1 ,4  ,INSTLAMBDA{ inc(mc,mc.Registers.d); } };
 	instructions[0x15] = { "DEC D     " ,1 ,4  ,INSTLAMBDA{ dec(mc,mc.Registers.d); } };

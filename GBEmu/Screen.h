@@ -48,8 +48,11 @@ public:
 	uint8_t vram[0xF000];
 
 	SDL_Rect GetTileRect(uint8_t tilenumber);
-
+	void SetMapAdress(uint16_t address);
 	void UpdateTilemap();
+
+	uint16_t BGMapAdress;
+
 private:
 	uint8_t scrollX;
 	uint8_t scrollY;

@@ -24,8 +24,8 @@ int main(int argc, char** argv)
 	Gameboy machine;
 	
 	//GBTests::DissassembleRom("Roms/Opus5.gb", "dissasembly.txt");
-	machine.LoadROM("Roms/Opus5.gb");
-	//machine.LoadROM("Roms/Tetris.gb");
+	//machine.LoadROM("Roms/Opus5.gb");
+	machine.LoadROM("Roms/Tetris.gb");
 	machine.Run();
 	return 0;
 }

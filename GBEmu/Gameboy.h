@@ -90,4 +90,6 @@ public:
 
 
 };
-
+static bool getbit(uint8_t byte, int nbit) {
+	return (byte >> nbit) & 1;
+}
