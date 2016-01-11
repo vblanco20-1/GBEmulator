@@ -23,9 +23,10 @@ unsigned char inc(Gameboy&mc,unsigned char& val) {
 	
 	mc.ClearFlags(Zero_Flag | HalfCarry_Flag | Subtract_Flag);
 
+	val++;
 	if ((val & 0x0f) == 0x0f)	mc.SetFlags(HalfCarry_Flag);
 
-	val++;
+	
 
 	if (val == 0) mc.SetFlags(Zero_Flag);
 	
@@ -35,10 +36,10 @@ unsigned char dec(Gameboy&mc, unsigned char& val) {
 
 	mc.ClearFlags(Zero_Flag | HalfCarry_Flag);
 	mc.SetFlags(Subtract_Flag);
+	val--;
 
 	if ((val & 0x0f) )	mc.SetFlags(HalfCarry_Flag);
 
-	val--;
 
 	if (val == 0) mc.SetFlags(Zero_Flag);
 
@@ -398,10 +399,10 @@ void prefixCB(Gameboy&machine, uint16_t op)
 	{
 		machine.Registers.h = rr(machine, machine.Registers.h);
 	}
-	//else
-	//{
-	//	cout << "CB unimplemented" << endl;
-	//}
+	else
+	{
+		cout << "CB unimplemented" << endl;
+	}
 }
 void GB_Cpu::buildInstructionsVector()
 {	

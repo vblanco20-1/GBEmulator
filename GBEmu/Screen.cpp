@@ -288,7 +288,7 @@ void Screen::DrawBackground()
 			SDL_RenderCopy(renderer, tileMap, &GetTileRect(tilenumber), &tst);
 
 			tst.x += 256;
-			tst.y += 256;
+			tst.y -= 256;
 			SDL_RenderCopy(renderer, tileMap, &GetTileRect(tilenumber), &tst);
 
 			tst.x -= 256;

@@ -22,4 +22,4 @@ public:
 
 	void vblancInterrupt(Gameboy&machine);
 };
-
+void checkbit(Gameboy&machine, uint8_t reg, uint8_t bit);
