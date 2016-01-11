@@ -39,6 +39,7 @@ void Gameboy::writeByte(byte b, unsigned short idx)
 	{
 		cout << "Graphics edit "<< hex << b << endl;
 		GBScreen.writeByte(idx, b);
+		memory[idx] = b;
 		//GBScreen.vram[idx - 0x8000] = b;
 	}
 	if (idx >= 0x0000 && idx < 0x8000)
@@ -65,7 +66,7 @@ void Gameboy::writeByte(byte b, unsigned short idx)
 	if (idx == 0xff46) //DMAAA
 	{
 		uint16_t start = b << 8;
-
+		cout << "DMA" << hex << uint8_t(b) << endl;
 		for (int i = 0; i < 140; i++)
 		{
 			memory[0xfe00 + i] = memory[start + i];
