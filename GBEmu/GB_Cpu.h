@@ -2,9 +2,9 @@
 //#include "Gameboy.h"
 #include <functional>
 #include <vector>
-
+#include "BPrefix.h"
 class Gameboy;
-
+class CBPrefix;
 struct instruction {
 	std::string dissasembly;
 	unsigned char lenght;
@@ -14,7 +14,7 @@ struct instruction {
 
 class GB_Cpu {
 public:
-
+	CBPrefix *cbpref;
 	uint64_t cycles{ 0 };
 	std::vector<instruction> instructions;
 	void buildInstructionsVector();

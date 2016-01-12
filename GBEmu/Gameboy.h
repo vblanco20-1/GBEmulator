@@ -61,19 +61,25 @@ public:
 	Gameboy();
 	~Gameboy();
 
-	GB_Cpu CPU;
+	GB_Cpu *CPU;
 	Screen GBScreen;
 	
 	void writeByte(byte b, unsigned short idx);
-	byte readByte(unsigned short idx);
-	byte& getByte(unsigned short idx);
+	uint8_t readByte(unsigned short idx);
+	uint8_t& getByte(unsigned short idx);
 	unsigned short readShort(unsigned short idx);
 	void writeShort(unsigned short addr, unsigned short value);
 	bool LoadROM(std::string Address);
 	void reset();
 	void Run();
-	void EnableInterrupts() { bInterruptsEnabled = true; };
-	void DisableInterrupts() { bInterruptsEnabled = false; };
+	void EnableInterrupts() { 
+		bInterruptsEnabled = true; 
+		writeByte(1,0xffff); 
+	};
+	void DisableInterrupts() {
+		bInterruptsEnabled = false;
+		writeByte(0, 0xffff);
+	};
 	void Stop() {};
 	void Halt() {};
 
@@ -89,6 +95,9 @@ public:
 	bool GetFlag(unsigned char flag);
 
 	void UpdateInterrupts(int time);
+
+	int vsyncCycles;
+	int LDYCycles;
 };
 static bool getbit(uint8_t byte, int nbit) {
 	return (byte >> nbit) & 1;

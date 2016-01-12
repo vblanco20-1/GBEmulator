@@ -30,6 +30,9 @@
     <ClCompile Include="Tests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BPrefix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Screen.h">
@@ -43,6 +46,9 @@
     </ClInclude>
     <ClInclude Include="Tests.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BPrefix.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

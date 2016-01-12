@@ -129,6 +129,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BPrefix.cpp" />
     <ClCompile Include="Gameboy.cpp" />
     <ClCompile Include="GB_Cpu.cpp" />
     <ClCompile Include="main.cpp" />
@@ -136,6 +137,7 @@
     <ClCompile Include="Tests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BPrefix.h" />
     <ClInclude Include="Gameboy.h" />
     <ClInclude Include="GB_Cpu.h" />
     <ClInclude Include="Screen.h" />

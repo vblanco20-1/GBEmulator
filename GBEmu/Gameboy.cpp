@@ -151,11 +151,11 @@ void Gameboy::writeByte(byte b, unsigned short idx)
 	memory[idx] = b;
 }
 
-byte Gameboy::readByte(unsigned short idx)
+uint8_t Gameboy::readByte(unsigned short idx)
 {
 	return memory[idx];
 }
-byte & Gameboy::getByte(unsigned short idx)
+uint8_t & Gameboy::getByte(unsigned short idx)
 {
 	return memory[idx];
 }
@@ -250,80 +250,23 @@ void Gameboy::reset()
 
 	memory[0xff41] = 0;
 
-	CPU.buildInstructionsVector();
+	CPU = new GB_Cpu();
+	CPU->buildInstructionsVector();
 
 	GBScreen.Clear();
 }
 
 void Gameboy::Run()
 {
-	int vblanclaunch = 4194304 / 60; //cycles per second /60
-	int currentcycles =0;
+	
+	
 	int ldlyc =0 ;
 	while (true)
 	{
-		int cycles = CPU.StepInstruction(*this);
-		currentcycles += cycles;
-		ldlyc += cycles;
-		if (ldlyc > 40)
-		{
-			ldlyc = 0;
-			memory[0xff44]++;
-			if (memory[0xff44] > 153)
-			{
-				memory[0xff44] = 0;
-			}
-		}
-
-		if (currentcycles > vblanclaunch) {
-			currentcycles = 0;
-			//vblanc interupt
-
-			SDL_Event event;
-			while (SDL_PollEvent(&event))
-			{
-
-			}
-			if (bInterruptsEnabled)
-			{
-				CPU.vblancInterrupt(*this);
-			}
-			
-			
-			/*
-			for (int x = 0; x < 50; x++)
-			{
-				std::vector<uint8_t> testtile(16);
-				for (int i = 0; i < 16; i++)
-				{
-					testtile[i] = memory[0x4000 + i + x * 16];
-				}
-				GBScreen.DrawTile(testtile, (x % 10) * 8, (x / 10) * 8);
-			}
-
-			for (int x = 0; x < 50; x++)
-			{
-				std::vector<uint8_t> testtile(16);
-				for (int i = 0; i < 16; i++)
-				{
-					testtile[i] = memory[0xfe00 + i + x * 16];
-				}
-				GBScreen.DrawTile(testtile, (x % 10) * 8, 50 + (x / 10) * 8);
-			}
-
-			for (int x = 0; x < 50; x++)
-			{
-				std::vector<uint8_t> testtile(16);
-				for (int i = 0; i < 16; i++)
-				{
-					testtile[i] = memory[0x8000 + i + x * 16];
-				}
-				GBScreen.DrawTile(testtile, (x % 10) * 8, 100 + (x / 10) * 8);
-			}*/
-			//cout << "VBlanc frame" << endl;
-			GBScreen.DrawFrame();
-		}
+		int cycles = CPU->StepInstruction(*this);
 		
+		
+		UpdateInterrupts(cycles);
 		
 		
 		
@@ -346,8 +289,41 @@ bool Gameboy::GetFlag(unsigned char flag)
 	return ((Registers.f & flag) != 0) ;
 }
 
-void Gameboy::UpdateInterrupts(int time)
+void Gameboy::UpdateInterrupts(int cycles)
 {
+	const int vblanclaunch = 4194304 / 60; //cycles per second /60
+	vsyncCycles += cycles;
+	LDYCycles += cycles;
+	if (bInterruptsEnabled)
+	{
+	
+	if (LDYCycles > 40)
+	{
+		LDYCycles = 0;
+		memory[0xff44]++;
+		if (memory[0xff44] > 153)
+		{
+			memory[0xff44] = 0;
+		}
+	}
+	}
+	if (vsyncCycles > vblanclaunch) {
+		vsyncCycles = 0;
+		//vblanc interupt
 
-}
+		SDL_Event event;
+		while (SDL_PollEvent(&event))
+		{
+
+		}
+		if (bInterruptsEnabled)
+		{
+			CPU->vblancInterrupt(*this);
+		}
+
+
+
+		GBScreen.DrawFrame();
+	}
+} 
 
