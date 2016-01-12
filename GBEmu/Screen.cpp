@@ -12,7 +12,7 @@ Screen::Screen()
 		(
 			"SDL2",
 			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-			256*2, 256*2,
+			256, 256,
 			SDL_WINDOW_SHOWN
 			);
 
@@ -111,7 +111,14 @@ void Screen::SetPixel(unsigned short x, unsigned short y, int color)
 	backgroundpixels[offset + 0] = pxC;        // b
 	backgroundpixels[offset + 1] = pxC;        // g
 	backgroundpixels[offset + 2] = pxC;        // r
-	backgroundpixels[offset + 3] = SDL_ALPHA_OPAQUE;    // a		
+	if (color == 0)
+	{
+		backgroundpixels[offset + 3] = SDL_ALPHA_TRANSPARENT;    // a		
+	}
+	else
+	{
+		backgroundpixels[offset + 3] = SDL_ALPHA_OPAQUE;    // a		
+	}
 }
 
 void Screen::SetPixelTilemap(unsigned short x, unsigned short y, int color)
@@ -140,7 +147,15 @@ void Screen::SetPixelTilemap(unsigned short x, unsigned short y, int color)
 	tileMapPixels[offset + 0] = pxC;        // b
 	tileMapPixels[offset + 1] = pxC;        // g
 	tileMapPixels[offset + 2] = pxC;        // r
-	tileMapPixels[offset + 3] = SDL_ALPHA_OPAQUE;    // a		
+	if (color == 0)
+	{
+		tileMapPixels[offset + 3] = SDL_ALPHA_TRANSPARENT;    // a		
+	}
+	else
+	{
+		tileMapPixels[offset + 3] = SDL_ALPHA_OPAQUE;    // a		
+	}
+	
 }
 
 void Screen::Clear()
@@ -403,7 +418,7 @@ void Screen::DrawSprite(Sprite sprite)
 	{
 		flip = SDL_FLIP_HORIZONTAL ;
 	}
-	
+	SDL_SetTextureBlendMode(tileMap, SDL_BLENDMODE_BLEND);
 	SDL_RenderCopyEx(renderer, tileMap, &GetTileRect(sprite.Tile), &tst, 0, nullptr, SDL_RendererFlip(flip));
 
 	
