@@ -53,14 +53,14 @@ void Gameboy::writeByte(byte b, unsigned short idx)
 		//cout << "Graphics edit "<< hex << b << endl;
 		
 		
-		if (idx >= 0x9800 && idx <= 0x9C00)
+		/*if (idx >= 0x9800 && idx <= 0x9C00)
 		{
 			if (b == 0)
 			{
 				cout << "writigng 0 in tile map" << hex << b << endl;
 				return;
 			}
-		}
+		}*/
 		GBScreen.writeByte(idx, b);
 		//GBScreen.vram[idx - 0x8000] = b;
 	}

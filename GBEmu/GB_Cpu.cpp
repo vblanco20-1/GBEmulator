@@ -8,23 +8,51 @@
 using namespace std;
 void rlca(Gameboy&mc)
 {
+	mc.ClearFlags(Zero_Flag | Carry_Flag | HalfCarry_Flag | Subtract_Flag);
 	unsigned char carry = (mc.Registers.a & 0x80) >> 7;
-	if (carry) mc.SetFlags(Carry_Flag);
-		else   mc.ClearFlags(Carry_Flag);
 
 	mc.Registers.a <<= 1;
-	mc.Registers.a += carry;
+	mc.Registers.a |= carry;
 
-	mc.ClearFlags(HalfCarry_Flag| Subtract_Flag| Zero_Flag);
+	if (carry) mc.SetFlags(Carry_Flag);
 
 
-	
+	if (mc.Registers.a) mc.SetFlags(Zero_Flag);
+
+
+
+	//return value;
+}
+
+void rrca(Gameboy&mc)
+{
+	mc.ClearFlags(Zero_Flag | Carry_Flag | HalfCarry_Flag | Subtract_Flag);
+	unsigned char carry = (mc.Registers.a & 0x1);
+
+	mc.Registers.a >>= 1;
+	mc.Registers.a |= carry << 7;
+
+	if (carry) mc.SetFlags(Carry_Flag);
+
+
+	if (mc.Registers.a) mc.SetFlags(Zero_Flag);
+
+
+
+	//return value;
 }
 unsigned char inc(Gameboy&mc,unsigned char& val) {
 	
 	mc.ClearFlags(Zero_Flag | HalfCarry_Flag | Subtract_Flag);
-
-	val++;
+	if (val == 0xFF)
+	{
+		val = 0;
+	}
+	else
+	{
+		val++;
+	}
+	
 	if ((val & 0x0f) == 0x0f)	mc.SetFlags(HalfCarry_Flag);
 
 	
@@ -396,7 +424,7 @@ void prefixCB(Gameboy&machine, uint16_t op)
 	}
 	else if (op == 0x0056)
 	{
-		checkbit(machine, machine.readByte(machine.Registers.hl), 2);
+		//checkbit(machine, machine.readByte(machine.Registers.hl), 2);
 	}
 	else if (op == 0x003f)
 	{
@@ -468,7 +496,7 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0x0C] = { "INC C     " ,1 ,4  ,INSTLAMBDA{ inc(mc,mc.Registers.c); } };
 	instructions[0x0D] = { "DEC C	  " ,1 ,4  ,INSTLAMBDA{ dec(mc,mc.Registers.c); } };
 	instructions[0x0E] = { "LD C, n8  " ,2 ,8  ,INSTLAMBDA{ mc.Registers.c = byte(op); } };
-	instructions[0x0F] = { "RRCA      " ,1,4  ,INSTLAMBDA{ mc.Registers.a = rl(mc,mc.Registers.a); } };
+	instructions[0x0F] = { "RRCA      " ,1,4  ,INSTLAMBDA{rrca(mc); } };
 	
 	instructions[0x10] = { "STOP 0    " ,2 ,4  ,INSTLAMBDA{ mc.Stop(); } };
 	instructions[0x11] = { "LD DE, n16" ,3 ,12  ,INSTLAMBDA{ mc.Registers.de = op; } };
