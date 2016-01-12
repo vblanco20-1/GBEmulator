@@ -365,8 +365,8 @@ void Screen::DrawSprites()
 		
 		Sprite sprite;
 
-		sprite.posX= vram[0xfe00 - 0x8000 + i * 4 + 0];
-		sprite.posY = vram[0xfe00 - 0x8000 + i * 4 + 1];
+		sprite.posY= vram[0xfe00 - 0x8000 + i * 4 + 0];
+		sprite.posX = vram[0xfe00 - 0x8000 + i * 4 + 1];
 		sprite.Tile = vram[0xfe00 - 0x8000 + i * 4 + 2];
 		sprite.Flags = vram[0xfe00 - 0x8000 + i * 4 + 3];
 
