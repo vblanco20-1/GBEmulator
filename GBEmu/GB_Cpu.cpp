@@ -394,6 +394,10 @@ void prefixCB(Gameboy&machine, uint16_t op)
 	{
 		checkbit(machine, machine.Registers.a, 1);
 	}
+	else if (op == 0x0056)
+	{
+		checkbit(machine, machine.readByte(machine.Registers.hl), 2);
+	}
 	else if (op == 0x003f)
 	{
 		machine.Registers.a = srl(machine, machine.Registers.a);
@@ -410,6 +414,10 @@ void prefixCB(Gameboy&machine, uint16_t op)
 	{
 		machine.Registers.d = rl(machine, machine.Registers.d);
 	}
+	else if (op == 0x0038)
+	{
+		machine.Registers.h = srl(machine, machine.Registers.b);
+	}
 	else if (op == 0x003c)
 	{
 		machine.Registers.h = srl(machine, machine.Registers.h);
@@ -418,6 +426,10 @@ void prefixCB(Gameboy&machine, uint16_t op)
 	{
 		machine.Registers.d = srl(machine, machine.Registers.d);
 	}
+	else if (op == 0x0019)
+	{
+		machine.Registers.l = rr(machine, machine.Registers.c);
+	}
 	else if (op == 0x001d)
 	{
 		machine.Registers.l = rr(machine, machine.Registers.l);
@@ -425,6 +437,10 @@ void prefixCB(Gameboy&machine, uint16_t op)
 	else if (op == 0x001c)
 	{
 		machine.Registers.h = rr(machine, machine.Registers.h);
+	}
+	else if (op == 0x001A)
+	{
+		machine.Registers.h = rr(machine, machine.Registers.d);
 	}
 	else
 	{
@@ -452,7 +468,7 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0x0C] = { "INC C     " ,1 ,4  ,INSTLAMBDA{ inc(mc,mc.Registers.c); } };
 	instructions[0x0D] = { "DEC C	  " ,1 ,4  ,INSTLAMBDA{ dec(mc,mc.Registers.c); } };
 	instructions[0x0E] = { "LD C, n8  " ,2 ,8  ,INSTLAMBDA{ mc.Registers.c = byte(op); } };
-	instructions[0x0F] = { "RRCA      " ,1,4  ,INSTLAMBDA{ unimplemented(0xF); } };
+	instructions[0x0F] = { "RRCA      " ,1,4  ,INSTLAMBDA{ mc.Registers.a = rl(mc,mc.Registers.a); } };
 	
 	instructions[0x10] = { "STOP 0    " ,2 ,4  ,INSTLAMBDA{ mc.Stop(); } };
 	instructions[0x11] = { "LD DE, n16" ,3 ,12  ,INSTLAMBDA{ mc.Registers.de = op; } };
@@ -461,7 +477,7 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0x14] = { "INC D     " ,1 ,4  ,INSTLAMBDA{ inc(mc,mc.Registers.d); } };
 	instructions[0x15] = { "DEC D     " ,1 ,4  ,INSTLAMBDA{ dec(mc,mc.Registers.d); } };
 	instructions[0x16] = { "LD D, n8  " ,2 ,8  ,INSTLAMBDA{ mc.Registers.d = byte(op); } };
-	instructions[0x17] = { "RLA       " ,1 ,4  ,INSTLAMBDA{ unimplemented(); } };
+	instructions[0x17] = { "RLA       " ,1 ,4  ,INSTLAMBDA{ mc.Registers.a = rl(mc,mc.Registers.a); } };
 
 	instructions[0x18] = { "JR n8     " ,2 ,12  ,INSTLAMBDA{ mc.Registers.pc += int8_t(op); } };
 	instructions[0x19] = { "ADD HL, DE" ,1 ,8  ,INSTLAMBDA{ add16(mc,mc.Registers.hl,mc.Registers.de); } };
@@ -470,7 +486,7 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0x1C] = { "INC E     " ,1 ,4  ,INSTLAMBDA{ inc(mc,mc.Registers.e); } };
 	instructions[0x1D] = { "DEC E     " ,1 ,4  ,INSTLAMBDA{ dec(mc,mc.Registers.e); } };
 	instructions[0x1E] = { "LD E, n8  " ,2 ,8  ,INSTLAMBDA{ mc.Registers.e = byte(op); } };
-	instructions[0x1F] = { "RRA       " ,1 ,4  ,INSTLAMBDA{ unimplemented(); } };	
+	instructions[0x1F] = { "RRA       " ,1 ,4  ,INSTLAMBDA{ mc.Registers.a = rr(mc,mc.Registers.a); } };
 	
 	instructions[0x20] = { "JR NZ, n8"  ,2 ,12  ,INSTLAMBDA{ if (!mc.GetFlag(Zero_Flag)) { mc.Registers.pc += int8_t(op); }    } };
 	instructions[0x21] = { "LD HL, n16" ,3 ,12  ,INSTLAMBDA{ mc.Registers.hl = op; } };
@@ -685,7 +701,7 @@ void GB_Cpu::buildInstructionsVector()
 	instructions[0xDB] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{} };
 	instructions[0xDC] = { "CALL C ,n16   " ,3 ,24  ,INSTLAMBDA{ if (mc.GetFlag(Carry_Flag)) { call(mc,op); } } };
 	instructions[0xDD] = { "LITERALLYNOTHING " ,1,0  ,INSTLAMBDA{} };
-	instructions[0xDE] = { "SBC A, N8",2 ,8,INSTLAMBDA{ unimplemented(); } };
+	instructions[0xDE] = { "SBC A, N8",2 ,8,INSTLAMBDA{ sbc(mc,op); } };
 	instructions[0xDF] = { "RST 18H ", 1 ,16  ,INSTLAMBDA{ rst(mc,0x18); } };
 
 	instructions[0xE0] = { "LDH (n), A ",2 ,12  ,INSTLAMBDA{ mc.writeByte(mc.Registers.a,0xFF00 + op); } };
