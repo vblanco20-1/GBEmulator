@@ -9,7 +9,7 @@ struct instruction {
 	std::string dissasembly;
 	unsigned char lenght;
 	unsigned char cycles;
-	std::function<void(Gameboy&, unsigned short)> fn;
+	void(*fn)(Gameboy&, unsigned short);
 };
 
 class GB_Cpu {

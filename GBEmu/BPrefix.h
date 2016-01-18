@@ -6,7 +6,7 @@ class Gameboy;
 struct CBInst {
 	std::string dissasembly;
 	
-	std::function<void(Gameboy&)> fn;
+	void(*fn)(Gameboy&);
 };
 
 
