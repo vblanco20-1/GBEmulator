@@ -80,8 +80,8 @@ public:
 		bInterruptsEnabled = false;
 		writeByte(0, 0xffff);
 	};
-	void Stop() {};
-	void Halt() {};
+	void Stop();;
+	void Halt();;
 
 	
 
@@ -95,9 +95,12 @@ public:
 	bool GetFlag(unsigned char flag);
 
 	void UpdateInterrupts(int time);
+	void UpdateSTATInterrupt(int time);
 
 	int vsyncCycles;
 	int LDYCycles;
+
+	uint8_t LY;
 };
 static bool getbit(uint8_t byte, int nbit) {
 	return (byte >> nbit) & 1;

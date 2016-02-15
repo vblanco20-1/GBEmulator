@@ -25,8 +25,10 @@ void Gameboy::writeByte(byte b, unsigned short idx)
 		
 		
 		bool bit6 = getbit(b, 6);
+		bool bit5 = getbit(b, 5);
 		bool bit4 = getbit(b, 4);
 		bool bit3 = getbit(b, 3);
+		bool bit2 = getbit(b, 2);
 		bool bit1 = getbit(b, 1);
 		bool bit0 = getbit(b, 0);
 		cout << "LCDC register" << endl;
@@ -66,7 +68,7 @@ void Gameboy::writeByte(byte b, unsigned short idx)
 	}
 	if (idx >= 0x0000 && idx < 0x4000)
 	{
-		cout << "CANT EDIT THIS ITS ROM" << hex << uint8_t(b) << endl;
+		cout << "CANT EDIT THIS ITS ROM" << hex << (void*)(b) << endl;
 		//return;
 	}
 
@@ -153,6 +155,16 @@ void Gameboy::writeByte(byte b, unsigned short idx)
 
 uint8_t Gameboy::readByte(unsigned short idx)
 {
+	if (idx > 0xFF00)
+	{
+	//	cout << hex << "Reading a register" << idx << endl;
+	}
+	if (idx == 0xff44)//LY
+	{
+		return LY;
+	}
+
+
 	return memory[idx];
 }
 uint8_t & Gameboy::getByte(unsigned short idx)
@@ -274,6 +286,16 @@ void Gameboy::Run()
 	}
 }
 
+void Gameboy::Stop()
+{
+	cout << "STOP" << endl;
+}
+
+void Gameboy::Halt()
+{
+	cout << "halted" << endl;
+}
+
 void Gameboy::SetFlags(unsigned char flags)
 {
 	Registers.f = Registers.f | flags;
@@ -292,21 +314,26 @@ bool Gameboy::GetFlag(unsigned char flag)
 void Gameboy::UpdateInterrupts(int cycles)
 {
 	const int vblanclaunch = 4194304 / 60; //cycles per second /60
+	
+	const int maxLY = 154;
+	const int lyup = (4194304 / 60) / 154;
 	vsyncCycles += cycles;
 	LDYCycles += cycles;
-	if (bInterruptsEnabled)
-	{
+
 	
-	if (LDYCycles > 40)
+	if (LDYCycles > lyup)
 	{
 		LDYCycles = 0;
 		memory[0xff44]++;
-		if (memory[0xff44] > 153)
+		if (memory[0xff44] >= maxLY)
 		{
 			memory[0xff44] = 0;
 		}
+		LY = memory[0xff44];
+		//cout <<dec <<LY << endl;
 	}
-	}
+	UpdateSTATInterrupt(cycles);
+	
 	if (vsyncCycles > vblanclaunch) {
 		vsyncCycles = 0;
 		//vblanc interupt
@@ -319,11 +346,17 @@ void Gameboy::UpdateInterrupts(int cycles)
 		if (bInterruptsEnabled)
 		{
 			CPU->vblancInterrupt(*this);
+			
 		}
 
-
-
+		//cout << "VBLANC---------" << endl;
+		
 		GBScreen.DrawFrame();
 	}
 } 
+
+void Gameboy::UpdateSTATInterrupt(int time)
+{
+
+}
 

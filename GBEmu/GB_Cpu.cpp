@@ -199,15 +199,18 @@ void cp(Gameboy&mc, unsigned char n)
 
 
 void push(Gameboy&mc, unsigned short data)
-{
-	mc.Registers.sp -= 2;
+{	mc.Registers.sp -= 2;
 	mc.writeShort(mc.Registers.sp, data);	
+	//std::cout << "Pushing:" << data << endl;
+
 }
 
 void pop(Gameboy&mc, unsigned short&data)
 {	
 	data=mc.readShort(mc.Registers.sp);
 	mc.Registers.sp += 2;
+
+	//std::cout << "Popping:" << data << endl;
 }
 void call(Gameboy&mc, unsigned short addr)
 {	
@@ -229,7 +232,7 @@ void unimplemented(unsigned char opcode = 0) {
 	std::cout << "UNIMPLEMENTEEED" <<std::hex << opcode << std::endl;
 	
 }
-
+static bool printDissasembly = false;
 uint8_t GB_Cpu::StepInstruction(Gameboy&machine)
 {
 	auto pc = machine.Registers.pc;
@@ -237,32 +240,36 @@ uint8_t GB_Cpu::StepInstruction(Gameboy&machine)
 
 	machine.Registers.pc++;
 
-	
+
 	auto & inst = instructions[c];
 	unsigned short operands = 0;
 	if (inst.lenght == 2)
 	{
 		operands = machine.readByte(pc + 1);
-		machine.Registers.pc++;		
+		machine.Registers.pc++;
 	}
 	else if (inst.lenght == 3)
 	{
-		operands = machine.readShort(pc+1);		
-		machine.Registers.pc+=2;
+		operands = machine.readShort(pc + 1);
+		machine.Registers.pc += 2;
 	}
-	
-	if (c == 0 || (c == 0xCC && operands == 0xcccc)) //we fucked up
+
+	if (pc == 0x0098 || (c == 0xCC && operands == 0xcccc)) //we fucked up
 	{
 		inst = instructions[c];
 	}
-	if (pc == 0x20B || c == 0xff)
+	if (c == 0x76)
 	{
-		inst = instructions[c];
+		cout << "haltin" << endl;
 	}
 	cycles += inst.cycles;
 	cout.flags(ios::right | ios::hex | ios::showbase);
 	unsigned int t = uint8_t(c);
-	//std::cout << std::setw(10) << std::left<< std::hex << pc  << std::setw(15) << std::left <<  inst.dissasembly  << "c:" << std::setw(10) << t << std::left<<" operands:" << std::setw(0) << std::left <<  operands << std::endl;
+	if (printDissasembly)
+	{
+	
+	std::cout << std::setw(10) << std::left << std::hex << pc << std::setw(15) << std::left << inst.dissasembly << "c:" << std::setw(10) << t << std::left << " operands:" << std::setw(0) << std::left << operands << std::endl;
+	}
 	if (c == 0xcb)
 	{
 		cbpref->execute(machine, uint8_t(operands & 0xff));
